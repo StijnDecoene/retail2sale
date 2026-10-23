@@ -329,12 +329,12 @@ export async function stageplaatsenImporteren(
   if (leesFout) return { fout: vertaal(leesFout, "Lezen")?.fout };
 
   type Rij = Record<string, unknown> & { id?: string };
-  const opKbo = new Map<string, Rij>();
+  const opKbo = new Map<string, Rij[]>();
   const opNaam = new Map<string, Rij>();
   const zonderGemeente = new Map<string, Rij[]>();
   const onthoud = (p: Rij) => {
     const k = kboCijfers(p.kbo as string | null);
-    if (k.length >= 9) opKbo.set(k, p);
+    if (k.length >= 9) opKbo.set(k, [...(opKbo.get(k) ?? []), p]);
     opNaam.set(plaatsSleutel(p.naam as string, p.gemeente as string | null), p);
     const n = plaatsSleutel(p.naam as string, null);
     zonderGemeente.set(n, [...(zonderGemeente.get(n) ?? []), p]);
@@ -348,8 +348,13 @@ export async function stageplaatsenImporteren(
   for (const r of schoon) {
     const k = kboCijfers(r.kbo);
     let p =
-      (k.length >= 9 && opKbo.get(k)) ||
       opNaam.get(plaatsSleutel(r.naam!, r.gemeente)) ||
+      // Ondernemingsnummer enkel in dezelfde gemeente: een keten heeft één nummer voor al haar winkels.
+      (() => {
+        const zelfde = k.length >= 9 ? opKbo.get(k) ?? [] : [];
+        if (!r.gemeente) return zelfde.length === 1 ? zelfde[0] : undefined;
+        return zelfde.find((p) => p.gemeente && plaatsSleutel("", p.gemeente as string) === plaatsSleutel("", r.gemeente));
+      })() ||
       // Gemeente ontbreekt aan één kant: enkel op naam koppelen als die naam maar één keer voorkomt.
       (() => {
         const zelfde = zonderGemeente.get(plaatsSleutel(r.naam!, null)) ?? [];
