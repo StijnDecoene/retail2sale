@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { serverClient, type Begeleider } from "@/lib/supabase/server";
 import { doetMee, schooljaarVan, vandaagIso, volledigeNaam, type Blok, type Dossier, type Leerling } from "@/lib/beheer";
-import { schoolActie, stapStatus, type AanvraagRij, type Beoordeling, type StapStatus, type Top3Rij } from "@/lib/portaal";
+import { schoolActie, stapStatus, type AanvraagRij, type Beoordeling, type ContractStand, type StapStatus, type Top3Rij } from "@/lib/portaal";
+import { ROL_LABEL, nodigeRollen, type Rol } from "@/lib/contract";
 
 export const metadata = { title: "Stagedossiers" };
 
@@ -28,6 +29,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
 
   let dossiers: Dossier[] = [];
   let top3: Top3Rij[] = [], aanvragen: AanvraagRij[] = [], beoordelingen: Beoordeling[] = [];
+  const contracten = new Map<string, NonNullable<ContractStand>>();
   if (blok) {
     const { data } = await sb.from("dossiers").select("*").eq("blok_id", blok.id);
     dossiers = (data ?? []) as Dossier[];
@@ -41,6 +43,14 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
       top3 = (t.data ?? []) as Top3Rij[];
       aanvragen = (a.data ?? []) as AanvraagRij[];
       beoordelingen = (o.data ?? []) as Beoordeling[];
+      // Contract: stand van de ondertekening (tabellen bestaan pas na de contractmigratie).
+      const [{ data: cs }, { data: ps }] = await Promise.all([
+        sb.from("contracten").select("dossier_id, meerderjarig, afgerond_op").in("dossier_id", ids),
+        sb.from("contract_partijen").select("dossier_id, rol").in("dossier_id", ids).not("getekend_op", "is", null),
+      ]);
+      for (const c of (cs ?? []) as { dossier_id: string; meerderjarig: boolean; afgerond_op: string | null }[]) {
+        contracten.set(c.dossier_id, { meerderjarig: c.meerderjarig, afgerond_op: c.afgerond_op, getekend: ((ps ?? []) as { dossier_id: string; rol: string }[]).filter((p) => p.dossier_id === c.dossier_id).map((p) => p.rol) });
+      }
     }
   }
   const perLeerling = new Map(dossiers.map((d) => [d.leerling_id, d]));
@@ -54,11 +64,24 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
       top3: d ? t3.get(d.id) ?? null : null,
       aanvraag: d ? aa.get(d.id) ?? null : null,
       beoordelingen: d ? beoordelingen.filter((b) => b.dossier_id === d.id) : [],
+      contract: d ? contracten.get(d.id) ?? null : null,
     });
+    // Contract in woorden voor de begeleider.
+    const c = d ? contracten.get(d.id) : undefined;
+    let contract: { toon: string; label: string; titel?: string } | null = null;
+    if (st.contract.code === "geregeld") contract = { toon: "ok", label: "Al geregeld" };
+    else if (st.aanvraag.state === "done" && !c) contract = { toon: "warn", label: "Nog klaar te zetten" };
+    else if (c) {
+      const nodig = nodigeRollen(c.meerderjarig);
+      const ontbreekt = nodig.filter((r) => !c.getekend.includes(r));
+      contract = c.afgerond_op || !ontbreekt.length
+        ? { toon: "ok", label: "Ondertekend" }
+        : { toon: c.getekend.length ? "in" : "warn", label: `${nodig.length - ontbreekt.length} van ${nodig.length}`, titel: `Nog: ${ontbreekt.map((r: Rol) => ROL_LABEL[r].toLowerCase()).join(", ")}` };
+    }
     const top = d ? t3.get(d.id) : undefined;
     const aanv = d ? aa.get(d.id) : undefined;
     const ingediend = schoolActie(st) === "top3" ? top?.ingediend_op : schoolActie(st) === "aanvraag" ? aanv?.ingediend_op : null;
-    return { l, d, st, actie: schoolActie(st), ingediend };
+    return { l, d, st, actie: schoolActie(st), ingediend, contract };
   });
 
   const tel = {
@@ -66,6 +89,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
     top3: rijen.filter((r) => r.st.top3.state === "action" || r.st.top3.state === "fix").length,
     aanvraag: rijen.filter((r) => r.st.aanvraag.state === "action" || r.st.aanvraag.state === "fix").length,
     klaar: rijen.filter((r) => r.st.aanvraag.state === "done").length,
+    contract: rijen.filter((r) => r.contract && r.contract.label !== "Ondertekend" && r.contract.label !== "Al geregeld").length,
   };
   const zoek = q.trim().toLowerCase();
   const lijst = rijen
@@ -76,6 +100,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
       if (filter === "top3") return r.st.top3.state === "action" || r.st.top3.state === "fix";
       if (filter === "aanvraag") return r.st.aanvraag.state === "action" || r.st.aanvraag.state === "fix";
       if (filter === "klaar") return r.st.aanvraag.state === "done";
+      if (filter === "contract") return !!r.contract && r.contract.label !== "Ondertekend" && r.contract.label !== "Al geregeld";
       return true;
     })
     // Wat op de school wacht eerst, oudste eerst.
@@ -102,6 +127,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
         <Link href={href("top3")} className="bh-kpi"><span className="l">Top 3 nog niet ingediend</span><span className="v">{tel.top3}</span></Link>
         <Link href={href("aanvraag")} className="bh-kpi"><span className="l">Aanvraag nog niet ingediend</span><span className="v">{tel.aanvraag}</span></Link>
         <Link href={href("klaar")} className="bh-kpi"><span className="l">Stageplaats rond</span><span className="v">{tel.klaar}<small> / {rijen.length}</small></span></Link>
+        <Link href={href("contract")} className="bh-kpi"><span className="l">Contract nog niet ondertekend</span><span className="v">{tel.contract}</span></Link>
       </div>
 
       <form className="bh-toolbar" method="get">
@@ -117,6 +143,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
           <option value="top3">Top 3 nog niet ingediend</option>
           <option value="aanvraag">Aanvraag nog niet ingediend</option>
           <option value="klaar">Stageplaats rond</option>
+          <option value="contract">Contract nog niet volledig ondertekend</option>
         </select>
         <button className="bh-btn" type="submit">Toon</button>
         {(q || klas || filter) && <Link href={href("")} className="bh-link">Wis filters</Link>}
@@ -128,10 +155,10 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
         ) : (
           <table className="bh-tabel">
             <thead>
-              <tr><th>Leerling</th><th>Klas</th><th>Top 3</th><th>Aanvraag</th><th>Stageplaats</th><th>Begeleider</th><th></th></tr>
+              <tr><th>Leerling</th><th>Klas</th><th>Top 3</th><th>Aanvraag</th><th>Contract</th><th>Stageplaats</th><th>Begeleider</th><th></th></tr>
             </thead>
             <tbody>
-              {lijst.map(({ l, d, st, actie }) => {
+              {lijst.map(({ l, d, st, actie, contract }) => {
                 const p = d?.stageplaats_id ? plaatsen.get(d.stageplaats_id) : null;
                 const g = d?.begeleider_id ? begeleiders.get(d.begeleider_id) : null;
                 const open = d ? `/beheer/dossiers/${d.id}` : `/beheer/leerlingen/${l.id}`;
@@ -141,6 +168,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
                     <td>{l.klas}</td>
                     <td><span className={`pill ${TOON[st.top3.state]}`}>{st.top3.label}</span></td>
                     <td>{st.aanvraag.state === "locked" ? <span className="sm">–</span> : <span className={`pill ${TOON[st.aanvraag.state]}`}>{st.aanvraag.label}</span>}</td>
+                    <td>{contract ? <><span className={`pill ${contract.toon}`}>{contract.label}</span>{contract.titel && <small className="sm bh-ct-nog"> {contract.titel}</small>}</> : <span className="sm">–</span>}</td>
                     <td>{p ? <>{p.naam}{p.gemeente ? <small className="sm"> · {p.gemeente}</small> : null}</> : <span className="sm">–</span>}</td>
                     <td>{g ? <span className="beg" style={{ background: g.kleur ?? "#1D5BAA" }}>{g.naam}</span> : <span className="sm">–</span>}</td>
                     <td>{actie && d ? <Link prefetch={false} className="bh-btn sm pri" href={open}>Nakijken</Link> : null}</td>
