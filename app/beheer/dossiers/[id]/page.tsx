@@ -10,6 +10,7 @@ import { mailAfzender, mailIngesteld } from "@/lib/mail-server";
 import { siteAdres } from "@/lib/bevestiging-versturen";
 import { huidigeGebruiker, serverClient, type Begeleider } from "@/lib/supabase/server";
 import ContractKaart from "@/components/contract/ContractKaart";
+import RoosterKaart from "@/components/rooster/RoosterKaart";
 import { bezettingsChecker } from "@/lib/stageplaats-bezetting";
 import { datumKort, tijdstip, volledigeNaam, zoekPlaats, type Blok, type Dossier, type Leerling, type Stageplaats } from "@/lib/beheer";
 import { stapStatus, type AanvraagRij, type Beoordeling, type Profiel, type StapStatus, type Top3Rij } from "@/lib/portaal";
@@ -230,6 +231,7 @@ export default async function DossierPagina({ params }: { params: Promise<{ id: 
         </section>
       )}
       {ba?.status === "goedgekeurd" && ik && <ContractKaart sb={sb} dossierId={id} ik={ik} site={site} />}
+      {(ba?.status === "goedgekeurd" || d.stageplaats_id) && <RoosterKaart sb={sb} dossierId={id} leerlingId={l.id} blokId={blok.id} site={site} />}
     </>
   );
 }

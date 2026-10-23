@@ -157,6 +157,8 @@ export function stapStatus(d: {
   aanvraag: AanvraagRij | null;
   beoordelingen: Beoordeling[];
   contract?: ContractStand;
+  /** stand van het werkrooster (roosterStand), null = nog niets */
+  rooster?: { code: string; label: string } | null;
 }): Record<StapKey, StapStatus> {
   const b3 = d.beoordelingen.find((b) => b.stap === "top3");
   const ba = d.beoordelingen.find((b) => b.stap === "aanvraag");
@@ -195,14 +197,23 @@ export function stapStatus(d: {
   else if (!c.meerderjarig && !g.has("ouder")) contract = { state: "action", code: "ouder", label: "Een ouder tekent nog" };
   else contract = { state: "wait", code: "school", label: "Wacht op de school" };
 
-  const rooster: StapStatus = { state: "locked", code: "later", label: klaar ? "Volgt binnenkort op dit platform" : "Opent na de aanvraag" };
+  let rooster: StapStatus;
+  const r = d.rooster;
+  if (!klaar && !geregeld) rooster = { state: "locked", code: "slot", label: "Opent na de aanvraag" };
+  else if (!c) rooster = geregeld ? { state: "locked", code: "slot", label: "Opent met het contract" } : { state: "wait", code: "klaarzetten", label: "Opent zodra het contract klaarstaat" };
+  else if (!r || r.code === "leeg" || r.code === "concept") rooster = { state: "action", code: "open", label: r?.code === "concept" ? r.label : "Nog te plannen" };
+  else if (r.code === "wijziging") rooster = { state: "action", code: "wijziging", label: r.label };
+  else if (r.code === "terug") rooster = { state: "fix", code: "terug", label: r.label };
+  else if (r.code === "goedgekeurd") rooster = { state: "done", code: "goedgekeurd", label: "Goedgekeurd" };
+  else rooster = { state: "wait", code: r.code, label: r.label };
   return { top3, aanvraag, infomail, contract, rooster };
 }
 
 /** Wat moet de school doen met dit dossier? (voor tellers en "Actie nodig") */
-export function schoolActie(s: Record<StapKey, StapStatus>): "top3" | "aanvraag" | null {
+export function schoolActie(s: Record<StapKey, StapStatus>): "top3" | "aanvraag" | "rooster" | null {
   if (s.top3.state === "wait") return "top3";
   if (s.aanvraag.state === "wait") return "aanvraag";
+  if (s.rooster.state === "wait" && s.rooster.code !== "klaarzetten") return "rooster";
   return null;
 }
 

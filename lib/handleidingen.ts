@@ -30,7 +30,7 @@ export const HANDLEIDINGEN: Record<Wie, HandleidingInhoud> = {
       "U krijgt een mail dat de stage vastligt, met een persoonlijke link naar het stagecontract.",
       "U vult het contract aan en tekent digitaal. Dat duurt ongeveer vijf minuten.",
       "Daarna tekenen de stagiair, een ouder (bij een minderjarige stagiair) en de school. U krijgt het contract als pdf.",
-      "U legt samen met de stagiair het werkrooster vast vóór de eerste stagedag.",
+      "U plant samen met de stagiair het werkrooster op het platform, vóór de eerste stagedag.",
       "Tijdens de stage komt de stagebegeleider op bezoek. Op het einde vult u een evaluatie in.",
     ],
     stappen: [
@@ -83,16 +83,18 @@ export const HANDLEIDINGEN: Record<Wie, HandleidingInhoud> = {
         tekst: ["Na u tekenen de stagiair en, bij een minderjarige stagiair, een ouder of voogd. De school tekent als laatste. Zodra iedereen getekend heeft, krijgt u het volledige contract als pdf. Via dezelfde link kan u het contract altijd opnieuw bekijken of downloaden."],
       },
       {
-        titel: "Het werkrooster vastleggen",
+        titel: "Het werkrooster plannen",
         wanneer: "Vóór de eerste stagedag",
-        tekst: ["Leg samen met de stagiair het werkrooster vast. De regels:"],
+        tekst: [
+          "Open het werkrooster via dezelfde persoonlijke link als het contract (knop **Werkrooster plannen**), of plan samen met de stagiair op zijn of haar gsm. Vink per week de stagedagen aan en vul de uren en de pauze in. Met **Overnemen in de volgende weken** kopieert u een week. De teller bovenaan toont hoeveel uur er nog te plannen is. De regels:",
+        ],
         punten: [
-          "het aantal uur van de blokstage (meestal 120 uur), gemiddeld 24 uur per week;",
+          "het totaal is exact het aantal uur van de blokstage (meestal 120 uur), gemiddeld 24 uur per week;",
           "stage op dinsdag tot en met zaterdag: op maandag is de stagiair op school;",
-          "geen stage op zon- en feestdagen, tenzij in overleg;",
+          "op vakantie-, feest- en zondagen enkel in overleg (u bevestigt dat bij het indienen);",
           "voor een stagiair jonger dan 18: maximum 8 uur per dag en 40 uur per week, minstens 12 uur rust tussen twee werkdagen, geen werk tussen 20u en 6u, en een uur pauze bij meer dan zes uur werk.",
         ],
-        tip: "Bezorg het rooster aan retail2sale@snh.be. Binnenkort kan u het rooster ook rechtstreeks via het stageplatform doorgeven.",
+        tip: "Klopt alles, vul dan uw naam in, bevestig en klik op **Rooster indienen**. De stagebegeleiding keurt het rooster goed en u krijgt het als pdf. Moet er later iets wijzigen, kies dan **Rooster aanpassen**: het goedgekeurde rooster blijft gelden tot de wijziging is goedgekeurd.",
       },
       {
         titel: "Tijdens de stage",
@@ -130,7 +132,7 @@ export const HANDLEIDINGEN: Record<Wie, HandleidingInhoud> = {
       "De stagebegeleiding keurt er één of twee goed.",
       "Je gaat langs, stelt je voor en vult samen met de stagementor de aanvraag in.",
       "Na goedkeuring krijg je een bevestiging. De stagegever tekent het contract, daarna teken jij (en een ouder als je jonger bent dan 18).",
-      "Je legt samen met de stagegever je werkrooster vast. Dan kan de stage beginnen.",
+      "Je plant samen met de stagegever je werkrooster op het platform. Dan kan de stage beginnen.",
     ],
     stappen: [
       {
@@ -188,7 +190,11 @@ export const HANDLEIDINGEN: Record<Wie, HandleidingInhoud> = {
       {
         titel: "Je werkrooster",
         wanneer: "Vóór de eerste stagedag",
-        tekst: ["Leg samen met je stagementor je werkrooster vast: het aantal uur van de blokstage (meestal 120 uur), op dinsdag tot en met zaterdag. Ben je jonger dan 18, dan werk je maximum 8 uur per dag en niet na 20u."],
+        tekst: [
+          "Plan samen met je stagementor je stagedagen in Mijn stage, bij **Werkrooster**: vink de dagen aan en vul de uren en de pauze in. Het totaal moet exact het aantal uur van de blokstage zijn (meestal 120 uur), op dinsdag tot en met zaterdag. Ben je jonger dan 18, dan werk je maximum 8 uur per dag en niet na 20u.",
+          "De stagegever bevestigt het rooster met zijn of haar naam en dient het in. Daarna keurt de stagebegeleiding het goed.",
+        ],
+        tip: "De stagegever kan het rooster ook zelf invullen via zijn persoonlijke link. Jullie zien allebei hetzelfde rooster.",
       },
       {
         titel: "Tijdens de stage",

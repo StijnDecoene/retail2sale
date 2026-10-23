@@ -2,6 +2,8 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { huidigeGebruiker, serverClient } from "@/lib/supabase/server";
 import { doetMee, schooljaarVan, vandaagIso, type Blok, type Leerling } from "@/lib/beheer";
+import { laadRooster } from "@/lib/werkrooster-server";
+import { roosterStand } from "@/lib/werkrooster";
 import { stapStatus, type AanvraagRij, type Beoordeling, type ContractStand, type Profiel, type Top3Rij } from "@/lib/portaal";
 
 export type PubliekePlaats = { naam: string; straat: string | null; postcode: string | null; gemeente: string | null; website: string | null; sector: string | null; bezet: boolean };
@@ -76,6 +78,7 @@ export async function laadDossier(sb: Awaited<ReturnType<typeof serverClient>>, 
     contract = (c as ContractStand) ?? null;
     contractLink = (t as string | null) ?? null;
   }
+  const rooster = contract ? await laadRooster(sb, { dossier: dossierId }) : null;
   const top3 = (tR.data as Top3Rij | null) ?? null;
   const aanvraag = (aR.data as AanvraagRij | null) ?? null;
   const beoordelingen = (bR.data ?? []) as Beoordeling[];
@@ -93,9 +96,10 @@ export async function laadDossier(sb: Awaited<ReturnType<typeof serverClient>>, 
     beoordelingen,
     profiel: ((pR.data?.gegevens as Profiel | undefined) ?? {}) as Profiel,
     plaatsen: (plR.data ?? []) as PubliekePlaats[],
-    status: stapStatus({ stageplaats_id: dossier.stageplaats_id, top3, aanvraag, beoordelingen, contract }),
+    status: stapStatus({ stageplaats_id: dossier.stageplaats_id, top3, aanvraag, beoordelingen, contract, rooster: rooster ? roosterStand(rooster.rooster) : null }),
     stageplaatsNaam,
     contract,
     contractLink,
+    rooster,
   };
 }
