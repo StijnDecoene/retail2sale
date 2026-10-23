@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { KLEDIJ, aanvraagVoorinvullen, type AanvraagGegevens, type Keuze, type Profiel } from "@/lib/portaal";
 import { aanvraagBewaren, type PortaalResultaat } from "./acties";
-import { Veld, Vink, Voet } from "./Velden";
+import { Datumkeuze, Veld, Vink, Voet } from "./Velden";
 
 type Sectie = "stagiair" | "bedrijf" | "mentor" | "verantwoordelijke" | "werkvloer";
 
@@ -158,7 +158,15 @@ export default function AanvraagFormulier({
       <section className="bh-card">
         <div className="hd"><h2>Over jou</h2></div>
         <div className="bd bh-fg">
-          {tekst("stagiair", "geboortedatum", "Je geboortedatum *", { type: "date", hint: "Nodig voor het stagecontract." })}
+          <Datumkeuze
+            label="Je geboortedatum *"
+            waarde={v("stagiair", "geboortedatum")}
+            onChange={(iso) => zet("stagiair", "geboortedatum", iso)}
+            fout={f["stagiair.geboortedatum"]}
+            hint="Nodig voor het stagecontract."
+            vanJaar={Number(startBlok.slice(0, 4)) - 25}
+            totJaar={Number(startBlok.slice(0, 4)) - 14}
+          />
           {tekst("stagiair", "gsm", "Je gsm-nummer", { type: "tel" })}
           {tekst("stagiair", "nood_naam", "Te verwittigen bij nood: naam *")}
           {tekst("stagiair", "nood_tel", "Te verwittigen bij nood: telefoon *", { type: "tel" })}

@@ -85,6 +85,8 @@ export function top3Fouten(profiel: Profiel, keuzes: Keuze[]): Record<string, st
 export function leeftijdOp(geboortedatum: string | undefined, dagIso: string): number | null {
   if (!geboortedatum || !/^\d{4}-\d{2}-\d{2}$/.test(geboortedatum)) return null;
   const [gj, gm, gd] = geboortedatum.split("-").map(Number);
+  const echt = new Date(Date.UTC(gj, gm - 1, gd));
+  if (echt.getUTCMonth() !== gm - 1 || echt.getUTCDate() !== gd) return null; // bv. 31 februari
   const [j, m, d] = dagIso.split("-").map(Number);
   let a = j - gj;
   if (m < gm || (m === gm && d < gd)) a--;
