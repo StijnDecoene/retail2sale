@@ -9,6 +9,16 @@ const nextConfig = {
       "./node_modules/@fontsource/figtree/files/figtree-latin-*-normal.woff",
       "./node_modules/@fontsource/schibsted-grotesk/files/schibsted-grotesk-latin-*-normal.woff",
     ],
+    "/rooster/**": [
+      "./public/img/logo-*.png",
+      "./node_modules/@fontsource/figtree/files/figtree-latin-*-normal.woff",
+      "./node_modules/@fontsource/schibsted-grotesk/files/schibsted-grotesk-latin-*-normal.woff",
+    ],
+    "/portaal/**": [
+      "./public/img/logo-*.png",
+      "./node_modules/@fontsource/figtree/files/figtree-latin-*-normal.woff",
+      "./node_modules/@fontsource/schibsted-grotesk/files/schibsted-grotesk-latin-*-normal.woff",
+    ],
     "/handleiding/**": [
       "./public/img/logo-*.png",
       "./node_modules/@fontsource/figtree/files/figtree-latin-*-normal.woff",

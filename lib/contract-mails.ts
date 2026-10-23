@@ -128,7 +128,7 @@ export async function afgerondMailen(d: ContractData, emails: string[], pdf: Bij
       aanspreking: "Beste",
       alineas: [
         `Alle partijen hebben het stagecontract van ${lln} ondertekend. In bijlage vindt u het volledige contract als pdf.`,
-        "Volgende stap: de stagegever en de stagiair leggen samen het werkrooster vast vóór de eerste stagedag.",
+        "Volgende stap: de stagegever en de stagiair plannen samen het werkrooster vóór de eerste stagedag. De stagegever doet dat via dezelfde persoonlijke link als het contract, de stagiair in het portaal.",
       ],
     }),
     bijlagen: [pdf],

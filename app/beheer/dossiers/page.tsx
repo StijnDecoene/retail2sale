@@ -3,6 +3,7 @@ import { serverClient, type Begeleider } from "@/lib/supabase/server";
 import { doetMee, schooljaarVan, vandaagIso, volledigeNaam, type Blok, type Dossier, type Leerling } from "@/lib/beheer";
 import { schoolActie, stapStatus, type AanvraagRij, type Beoordeling, type ContractStand, type StapStatus, type Top3Rij } from "@/lib/portaal";
 import { ROL_LABEL, nodigeRollen, type Rol } from "@/lib/contract";
+import { roosterStand, uren, type RoosterRij } from "@/lib/werkrooster";
 
 export const metadata = { title: "Stagedossiers" };
 
@@ -30,6 +31,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
   let dossiers: Dossier[] = [];
   let top3: Top3Rij[] = [], aanvragen: AanvraagRij[] = [], beoordelingen: Beoordeling[] = [];
   const contracten = new Map<string, NonNullable<ContractStand>>();
+  const roosters = new Map<string, RoosterRij>();
   if (blok) {
     const { data } = await sb.from("dossiers").select("*").eq("blok_id", blok.id);
     dossiers = (data ?? []) as Dossier[];
@@ -48,6 +50,8 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
         sb.from("contracten").select("dossier_id, meerderjarig, afgerond_op").in("dossier_id", ids),
         sb.from("contract_partijen").select("dossier_id, rol").in("dossier_id", ids).not("getekend_op", "is", null),
       ]);
+      const { data: rs } = await sb.from("roosters").select("dossier_id, status, vorige, totaal_min, ingediend_op").in("dossier_id", ids);
+      for (const r of (rs ?? []) as RoosterRij[]) roosters.set(r.dossier_id, r);
       for (const c of (cs ?? []) as { dossier_id: string; meerderjarig: boolean; afgerond_op: string | null }[]) {
         contracten.set(c.dossier_id, { meerderjarig: c.meerderjarig, afgerond_op: c.afgerond_op, getekend: ((ps ?? []) as { dossier_id: string; rol: string }[]).filter((p) => p.dossier_id === c.dossier_id).map((p) => p.rol) });
       }
@@ -65,7 +69,9 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
       aanvraag: d ? aa.get(d.id) ?? null : null,
       beoordelingen: d ? beoordelingen.filter((b) => b.dossier_id === d.id) : [],
       contract: d ? contracten.get(d.id) ?? null : null,
+      rooster: d && roosters.has(d.id) ? roosterStand(roosters.get(d.id)!) : null,
     });
+    const rooster = d ? roosters.get(d.id) : undefined;
     // Contract in woorden voor de begeleider.
     const c = d ? contracten.get(d.id) : undefined;
     let contract: { toon: string; label: string; titel?: string } | null = null;
@@ -80,8 +86,9 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
     }
     const top = d ? t3.get(d.id) : undefined;
     const aanv = d ? aa.get(d.id) : undefined;
-    const ingediend = schoolActie(st) === "top3" ? top?.ingediend_op : schoolActie(st) === "aanvraag" ? aanv?.ingediend_op : null;
-    return { l, d, st, actie: schoolActie(st), ingediend, contract };
+    const actie = schoolActie(st);
+    const ingediend = actie === "top3" ? top?.ingediend_op : actie === "aanvraag" ? aanv?.ingediend_op : actie === "rooster" ? rooster?.ingediend_op : null;
+    return { l, d, st, actie, ingediend, contract, rooster };
   });
 
   const tel = {
@@ -90,6 +97,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
     aanvraag: rijen.filter((r) => r.st.aanvraag.state === "action" || r.st.aanvraag.state === "fix").length,
     klaar: rijen.filter((r) => r.st.aanvraag.state === "done").length,
     contract: rijen.filter((r) => r.contract && r.contract.label !== "Ondertekend" && r.contract.label !== "Al geregeld").length,
+    rooster: rijen.filter((r) => r.st.rooster.state === "action" || r.st.rooster.state === "fix").length,
   };
   const zoek = q.trim().toLowerCase();
   const lijst = rijen
@@ -100,6 +108,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
       if (filter === "top3") return r.st.top3.state === "action" || r.st.top3.state === "fix";
       if (filter === "aanvraag") return r.st.aanvraag.state === "action" || r.st.aanvraag.state === "fix";
       if (filter === "klaar") return r.st.aanvraag.state === "done";
+      if (filter === "rooster") return r.st.rooster.state === "action" || r.st.rooster.state === "fix";
       if (filter === "contract") return !!r.contract && r.contract.label !== "Ondertekend" && r.contract.label !== "Al geregeld";
       return true;
     })
@@ -113,7 +122,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
       <header className="bh-top">
         <div>
           <h1>Stagedossiers</h1>
-          <p className="sub">Top 3 en aanvragen van de leerlingen{blok ? ` · ${blok.naam}` : ""}</p>
+          <p className="sub">Top 3, aanvragen, contracten en werkroosters{blok ? ` · ${blok.naam}` : ""}</p>
         </div>
         {blokken.length > 1 && (
           <nav className="bh-seg" aria-label="Blokstage">
@@ -128,6 +137,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
         <Link href={href("aanvraag")} className="bh-kpi"><span className="l">Aanvraag nog niet ingediend</span><span className="v">{tel.aanvraag}</span></Link>
         <Link href={href("klaar")} className="bh-kpi"><span className="l">Stageplaats rond</span><span className="v">{tel.klaar}<small> / {rijen.length}</small></span></Link>
         <Link href={href("contract")} className="bh-kpi"><span className="l">Contract nog niet ondertekend</span><span className="v">{tel.contract}</span></Link>
+        <Link href={href("rooster")} className="bh-kpi"><span className="l">Werkrooster nog niet ingediend</span><span className="v">{tel.rooster}</span></Link>
       </div>
 
       <form className="bh-toolbar" method="get">
@@ -144,6 +154,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
           <option value="aanvraag">Aanvraag nog niet ingediend</option>
           <option value="klaar">Stageplaats rond</option>
           <option value="contract">Contract nog niet volledig ondertekend</option>
+          <option value="rooster">Werkrooster nog niet ingediend</option>
         </select>
         <button className="bh-btn" type="submit">Toon</button>
         {(q || klas || filter) && <Link href={href("")} className="bh-link">Wis filters</Link>}
@@ -155,10 +166,10 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
         ) : (
           <table className="bh-tabel">
             <thead>
-              <tr><th>Leerling</th><th>Klas</th><th>Top 3</th><th>Aanvraag</th><th>Contract</th><th>Stageplaats</th><th>Begeleider</th><th></th></tr>
+              <tr><th>Leerling</th><th>Klas</th><th>Top 3</th><th>Aanvraag</th><th>Contract</th><th>Werkrooster</th><th>Stageplaats</th><th>Begeleider</th><th></th></tr>
             </thead>
             <tbody>
-              {lijst.map(({ l, d, st, actie, contract }) => {
+              {lijst.map(({ l, d, st, actie, contract, rooster }) => {
                 const p = d?.stageplaats_id ? plaatsen.get(d.stageplaats_id) : null;
                 const g = d?.begeleider_id ? begeleiders.get(d.begeleider_id) : null;
                 const open = d ? `/beheer/dossiers/${d.id}` : `/beheer/leerlingen/${l.id}`;
@@ -169,6 +180,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
                     <td><span className={`pill ${TOON[st.top3.state]}`}>{st.top3.label}</span></td>
                     <td>{st.aanvraag.state === "locked" ? <span className="sm">–</span> : <span className={`pill ${TOON[st.aanvraag.state]}`}>{st.aanvraag.label}</span>}</td>
                     <td>{contract ? <><span className={`pill ${contract.toon}`}>{contract.label}</span>{contract.titel && <small className="sm bh-ct-nog"> {contract.titel}</small>}</> : <span className="sm">–</span>}</td>
+                    <td>{st.rooster.state === "locked" || st.rooster.code === "klaarzetten" ? <span className="sm">–</span> : <span className={`pill ${TOON[st.rooster.state]}`} title={rooster ? `${uren(rooster.totaal_min)} gepland` : undefined}>{st.rooster.label}</span>}</td>
                     <td>{p ? <>{p.naam}{p.gemeente ? <small className="sm"> · {p.gemeente}</small> : null}</> : <span className="sm">–</span>}</td>
                     <td>{g ? <span className="beg" style={{ background: g.kleur ?? "#1D5BAA" }}>{g.naam}</span> : <span className="sm">–</span>}</td>
                     <td>{actie && d ? <Link prefetch={false} className="bh-btn sm pri" href={open}>Nakijken</Link> : null}</td>

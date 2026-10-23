@@ -41,6 +41,9 @@ export default function ContractFlow({
       ) : !kan ? (
         <div className="pt-feedback"><b>Je kan nog niet tekenen</b><small>De stagegever tekent eerst. Je krijgt bericht zodra het jouw beurt is. Je kan het contract intussen al lezen.</small></div>
       ) : null}
+      {rol === "stagegever" && (ikGetekend || status.afgerond) && (
+        <div className="pt-feedback"><b>Volgende stap: het werkrooster</b><small>Plan samen met {d.leerling.voornaam} de stagedagen ({d.blok.uren} uur). <a href={`/rooster/${token}`}>Werkrooster plannen</a></small></div>
+      )}
 
       {toonFlow ? (
         <section className="bh-card ct-kaart">

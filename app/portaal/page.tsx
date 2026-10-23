@@ -5,6 +5,7 @@ import { kiesBlok, laadDossier, portaalGebruiker } from "@/lib/portaal-server";
 import { AanvraagSamenvatting, Top3Samenvatting } from "@/components/portaal/Samenvatting";
 import Top3Formulier from "./Top3Formulier";
 import AanvraagFormulier from "./AanvraagFormulier";
+import RoosterEditor from "@/components/rooster/RoosterEditor";
 
 type Zoek = Promise<{ leerling?: string; blok?: string; stap?: string }>;
 
@@ -239,8 +240,20 @@ export default async function Portaal({ searchParams }: { searchParams: Zoek }) 
 
       {stap === "rooster" && (
         <section className="pt-paneel">
-          <div className="pt-paneel-kop"><h2>Werkrooster</h2></div>
-          <p className="bh-melding">Deze stap volgt binnenkort op dit platform.</p>
+          <div className="pt-paneel-kop">
+            <h2>Werkrooster</h2>
+            <p>Plan samen met je stagementor je stagedagen: in totaal {blok.uren} uur, op dinsdag tot en met zaterdag. De stagegever bevestigt het rooster, daarna keurt de stagebegeleiding het goed.</p>
+          </div>
+          {!d.rooster ? (
+            <p className="bh-melding">{status.rooster.state === "locked" ? "Het werkrooster opent zodra je aanvraag is goedgekeurd." : "Het werkrooster opent zodra de school je contract heeft klaargezet."}</p>
+          ) : (
+            <RoosterEditor
+              key={`${d.rooster.rooster?.status}-${d.rooster.rooster?.gewijzigd_op}`}
+              ctx={d.rooster}
+              sleutel={{ dossier: d.dossier.id }}
+              pdfUrl={`/portaal/rooster-pdf?dossier=${d.dossier.id}`}
+            />
+          )}
         </section>
       )}
     </>

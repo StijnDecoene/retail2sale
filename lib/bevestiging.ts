@@ -138,7 +138,7 @@ export function teksten(b: BevestigingData, voor: Voor = "stagegever") {
       intro: `Goed nieuws: je stage bij ${naamBedrijf(b)} ligt vast. De stagebegeleiding heeft je aanvraag goedgekeurd.`,
       stappen: [
         { t: "Stagecontract", x: "De stagegever vult eerst het contract aan en tekent. Daarna krijg je een link om zelf te tekenen; bij een minderjarige stagiair tekent ook een ouder of voogd." },
-        { t: "Werkrooster", x: `Leg samen met je stagementor vóór de eerste stagedag het werkrooster vast: ${b.blok.uren} uur in totaal, maximaal 8 uur per dag.` },
+        { t: "Werkrooster", x: `Plan samen met je stagementor vóór de eerste stagedag het werkrooster, in het portaal bij Mijn stage: ${b.blok.uren} uur in totaal, maximaal 8 uur per dag.` },
         { t: "Praktische info", x: "In bijlage vind je de infobrochure, de stagekalender met de vakantie- en feestdagen en een handleiding voor het stageplatform." },
       ],
       vragen: `Heb je vragen? Mail naar ${SCHOOL.stagemail} of spreek een van de stagebegeleiders aan.`,
@@ -166,7 +166,7 @@ function tekstenStagegever(b: BevestigingData) {
           ? "Vul het stagecontract aan en onderteken het digitaal via uw persoonlijke link in de begeleidende mail. Daarna tekenen de stagiair, een ouder (bij een minderjarige stagiair) en de school."
           : "Binnenkort ontvangt u een persoonlijke link om het stagecontract digitaal aan te vullen en te ondertekenen. Daarna tekenen de stagiair, een ouder (bij een minderjarige stagiair) en de school.",
       },
-      { t: "Werkrooster", x: `Leg samen met ${b.leerling.voornaam} vóór de eerste stagedag het werkrooster vast: ${b.blok.uren} uur in totaal, maximaal 8 uur per dag.` },
+      { t: "Werkrooster", x: `Plan samen met ${b.leerling.voornaam} vóór de eerste stagedag het werkrooster: ${b.blok.uren} uur in totaal, maximaal 8 uur per dag. Dat kan via dezelfde persoonlijke link als het contract.` },
       { t: "Praktische info", x: "In bijlage vindt u de infobrochure met de aanpak van de stage, de stagekalender met de vakantie- en feestdagen en een handleiding voor het stageplatform." },
     ],
     vragen: `Hebt u vragen over de stage? Mail naar ${SCHOOL.stagemail} of bel een van de stagebegeleiders.`,
