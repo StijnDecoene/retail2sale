@@ -168,7 +168,10 @@ export const plaatsSleutel = (naam: string, gemeente: string | null) =>
 /** Enkel de cijfers van een ondernemingsnummer. */
 export const kboCijfers = (k: string | null) => (k ?? "").replace(/\D/g, "");
 
-/** Bestaande stageplaats zoeken: eerst op ondernemingsnummer, dan op naam + gemeente. */
+/**
+ * Bestaande stageplaats zoeken: eerst op naam + gemeente, dan op ondernemingsnummer in dezelfde gemeente.
+ * Een keten (bv. As Adventure) heeft één ondernemingsnummer voor al haar winkels: dat nummer alleen volstaat dus niet.
+ */
 export function zoekPlaats<P extends { naam: string; gemeente?: string | null; kbo?: string | null }>(
   lijst: P[],
   naam: string,
@@ -177,8 +180,11 @@ export function zoekPlaats<P extends { naam: string; gemeente?: string | null; k
 ): P | undefined {
   const k = kboCijfers(kbo);
   const sleutel = plaatsSleutel(naam, gemeente);
+  const gem = plaatsSleutel("", gemeente);
   return (
-    (k.length >= 9 ? lijst.find((p) => kboCijfers(p.kbo ?? null) === k) : undefined) ??
-    lijst.find((p) => plaatsSleutel(p.naam, p.gemeente ?? null) === sleutel)
+    lijst.find((p) => plaatsSleutel(p.naam, p.gemeente ?? null) === sleutel) ??
+    (k.length >= 9 && gemeente
+      ? lijst.find((p) => kboCijfers(p.kbo ?? null) === k && plaatsSleutel("", p.gemeente ?? null) === gem)
+      : undefined)
   );
 }

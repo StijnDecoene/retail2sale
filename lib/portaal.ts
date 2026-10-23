@@ -94,7 +94,7 @@ export function leeftijdOp(geboortedatum: string | undefined, dagIso: string): n
 export function aanvraagFouten(g: AanvraagGegevens, startBlok: string): Record<string, string> {
   const f: Record<string, string> = {};
   const req: [string, unknown][] = [
-    ["bedrijf.naam", g.bedrijf?.naam], ["bedrijf.kbo", g.bedrijf?.kbo], ["bedrijf.straat", g.bedrijf?.straat],
+    ["bedrijf.naam", g.bedrijf?.naam], ["bedrijf.straat", g.bedrijf?.straat],
     ["bedrijf.postcode", g.bedrijf?.postcode], ["bedrijf.gemeente", g.bedrijf?.gemeente], ["bedrijf.soort", g.bedrijf?.soort],
     ["mentor.naam", g.mentor?.naam], ["mentor.email", g.mentor?.email],
     ["stagiair.geboortedatum", g.stagiair?.geboortedatum], ["stagiair.nood_naam", g.stagiair?.nood_naam], ["stagiair.nood_tel", g.stagiair?.nood_tel],
