@@ -1,52 +1,51 @@
-import type { ReactNode } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AfdrukKnop from "@/components/AfdrukKnop";
+import { CONTACT, stukken, type HandleidingInhoud } from "@/lib/handleidingen";
 
-export type HStap = { titel: string; wanneer?: string; tekst: ReactNode; punten?: ReactNode[]; tip?: ReactNode };
-export type HVraag = { v: string; a: ReactNode };
+/** Tekst met **vet** en [tekst](link). */
+function Rijk({ s }: { s: string }) {
+  return (
+    <>
+      {stukken(s).map((x, i) =>
+        x.link ? <a key={i} href={x.link}>{x.t}</a> : x.vet ? <b key={i}>{x.t}</b> : <span key={i}>{x.t}</span>,
+      )}
+    </>
+  );
+}
 
-/** Opmaak voor een handleiding: kop, "in het kort", genummerde stappen, vragen en contact. Ook netjes af te drukken. */
-export default function Handleiding({
-  voor, titel, intro, kort, stappen, vragen, andere,
-}: {
-  voor: string;
-  titel: string;
-  intro: ReactNode;
-  kort: ReactNode[];
-  stappen: HStap[];
-  vragen: HVraag[];
-  andere: { href: string; tekst: string };
-}) {
+/** Opmaak voor een handleiding: kop, "in het kort", genummerde stappen, vragen en contact. Ook als pdf te downloaden. */
+export default function Handleiding({ inhoud: h }: { inhoud: HandleidingInhoud }) {
   return (
     <>
       <Header actief="documenten" />
       <main className="wrap hl">
         <header className="hl-kop">
-          <span className="eyebrow"><span className="streep" />Handleiding · {voor}</span>
-          <h1>{titel}</h1>
-          <p className="lead">{intro}</p>
+          <span className="eyebrow"><span className="streep" />Handleiding · {h.voor}</span>
+          <h1>{h.titel}</h1>
+          <p className="lead">{h.intro}</p>
           <div className="hl-acties">
+            <a className="btn btn-blue" href={`/handleiding/${h.wie}/pdf`} download>Download als pdf</a>
             <AfdrukKnop />
-            <a className="btn btn-line" href={andere.href}>{andere.tekst}</a>
+            <a className="btn btn-line" href={h.andere.href}>{h.andere.tekst}</a>
           </div>
         </header>
 
         <section className="hl-kort" aria-labelledby="hl-kort">
           <h2 id="hl-kort">In het kort</h2>
-          <ol>{kort.map((k, i) => <li key={i}>{k}</li>)}</ol>
+          <ol>{h.kort.map((k, i) => <li key={i}><Rijk s={k} /></li>)}</ol>
         </section>
 
         <ol className="hl-stappen">
-          {stappen.map((s, i) => (
+          {h.stappen.map((s, i) => (
             <li key={s.titel} className="hl-stap">
               <span className="hl-nr" aria-hidden="true">{i + 1}</span>
               <div>
                 <h2>{s.titel}</h2>
                 {s.wanneer && <p className="hl-wanneer">{s.wanneer}</p>}
-                <div className="hl-tekst">{s.tekst}</div>
-                {s.punten && <ul>{s.punten.map((p, j) => <li key={j}>{p}</li>)}</ul>}
-                {s.tip && <p className="hl-tip"><b>Tip</b> {s.tip}</p>}
+                <div className="hl-tekst">{s.tekst.map((p, j) => <p key={j}><Rijk s={p} /></p>)}</div>
+                {s.punten && <ul>{s.punten.map((p, j) => <li key={j}><Rijk s={p} /></li>)}</ul>}
+                {s.tip && <p className="hl-tip"><b>Tip</b> <Rijk s={s.tip} /></p>}
               </div>
             </li>
           ))}
@@ -54,20 +53,17 @@ export default function Handleiding({
 
         <section className="hl-vragen" aria-labelledby="hl-vragen">
           <h2 id="hl-vragen">Vaak gestelde vragen</h2>
-          {vragen.map((q) => (
+          {h.vragen.map((q) => (
             <details key={q.v}>
               <summary>{q.v}</summary>
-              <div>{q.a}</div>
+              <div><Rijk s={q.a} /></div>
             </details>
           ))}
         </section>
 
         <section className="hl-contact">
           <h2>Vragen? Neem contact op</h2>
-          <p>
-            Mail naar <a href="mailto:retail2sale@snh.be">retail2sale@snh.be</a> of bel een van de stagebegeleiders:
-            Fien Claeys (0498 64 48 89) of Stijn Decoene (0479 28 85 07).
-          </p>
+          <p><Rijk s={CONTACT} /></p>
         </section>
       </main>
       <Footer />
