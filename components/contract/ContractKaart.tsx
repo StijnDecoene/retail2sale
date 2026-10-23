@@ -2,7 +2,8 @@ import Formulier, { ActieKnop } from "@/components/beheer/Formulier";
 import Ondertekening from "./Ondertekening";
 import Kopieer from "./Kopieer";
 import DirectieTekenen from "./DirectieTekenen";
-import { contractGegevensBewaren, contractHandtekeningWissen, contractKlaarzettenActie, contractLinkMailen } from "@/app/beheer/contract-acties";
+import { contractGegevensBewaren, contractHandtekeningWissen, contractKlaarzettenActie, contractLeeftijdHerbepalen, contractLinkMailen } from "@/app/beheer/contract-acties";
+import { leeftijdOp } from "@/lib/portaal";
 import { contractBeheer } from "@/lib/contract-server";
 import { HOEDANIGHEDEN, ROL_LABEL, SCHOOL_CONTRACT, contractStatus, effectief, getekend, magTekenen, nodigeRollen, type Rol } from "@/lib/contract";
 import { mailIngesteld } from "@/lib/mail-server";
@@ -53,7 +54,24 @@ export default async function ContractKaart({
         <div className="bh-acties">
           <a className="bh-btn" href={`/beheer/dossiers/${dossierId}/contract`} target="_blank" rel="noreferrer">Contract bekijken (pdf)</a>
           <a className="bh-btn" href={`/beheer/dossiers/${dossierId}/contract?download=1`}>Pdf downloaden</a>
-          {d.contract.meerderjarig && <span className="pill mut">Meerderjarige stagiair: geen handtekening ouder</span>}
+        </div>
+
+        <div className="bh-ct-leeftijd">
+          <span className="sm">
+            {(() => {
+              const gd = d.aanvraag.stagiair?.geboortedatum;
+              const lft = leeftijdOp(gd, d.blok.start_datum);
+              return lft === null
+                ? "Geen geldige geboortedatum in de aanvraag."
+                : `Geboortedatum ${(gd ?? "").split("-").reverse().join("/")}: ${lft} jaar op de eerste stagedag.`;
+            })()}{" "}
+            <b>{d.contract.meerderjarig ? "Meerderjarig: 3 handtekeningen, geen ouder." : "Minderjarig: 4 handtekeningen, een ouder of voogd tekent mee."}</b>
+          </span>
+          {!getekend(d, "stagiair") && !getekend(d, "ouder") && (
+            <Formulier actie={contractLeeftijdHerbepalen} knop="Leeftijd opnieuw bepalen" className="bh-form-inline">
+              <input type="hidden" name="dossier_id" value={dossierId} />
+            </Formulier>
+          )}
         </div>
 
         {magTekenen(d, "directie") && (

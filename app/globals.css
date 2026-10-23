@@ -620,3 +620,5 @@ a.pt-stap:hover { border-color: var(--line-strong); color: var(--ink); }
 .ct-partijen small { font-size: 12px; color: var(--muted); }
 .ct-sig { height: 54px; width: 100%; object-fit: contain; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
 .pt-knoppen { display: flex; flex-wrap: wrap; gap: 10px; }
+.bh-ct-leeftijd { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; background: #f8fafc; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.bh-ct-leeftijd .bh-form-voet .bh-btn { padding: 5px 10px; font-size: 12.5px; }
