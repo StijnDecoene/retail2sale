@@ -96,7 +96,7 @@ export default function AanvraagFormulier({
         <div className="bd bh-fg">
           {tekst("bedrijf", "naam", "Naam van de winkel of het bedrijf *")}
           {tekst("bedrijf", "juridisch", "Officiële naam (als die anders is)", { hint: "Bv. de naam van de bv of nv" })}
-          {tekst("bedrijf", "kbo", "Ondernemingsnummer *", { hint: "Bv. 0123.456.789. Staat op een kasticket of factuur." })}
+          {tekst("bedrijf", "kbo", "Ondernemingsnummer", { hint: "Als je mentor het weet. Anders vult de stagegever het aan bij het contract." })}
           <Veld label="Soort stage *" fout={f["bedrijf.soort"]}>
             <select value={v("bedrijf", "soort")} onChange={(e) => zet("bedrijf", "soort", e.target.value)}>
               <option value="">Kies…</option><option value="sales">Sales</option><option value="onthaal">Onthaal</option>
