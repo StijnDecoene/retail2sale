@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { BRANCHES, RIJBEWIJS, VERVOER, type Keuze, type Profiel } from "@/lib/portaal";
+import { BRANCHES, VERVOER, type Keuze, type Profiel } from "@/lib/portaal";
 import type { PubliekePlaats } from "@/lib/portaal-server";
 import { top3Bewaren, type PortaalResultaat } from "./acties";
 import { Veld, Vink, Voet } from "./Velden";
@@ -60,31 +60,6 @@ export default function Top3Formulier({
         {plaatsen.map((p) => <option key={p.naam + p.gemeente} value={p.naam}>{p.gemeente ?? ""}</option>)}
       </datalist>
 
-      <section className="bh-card">
-        <div className="hd"><h2>Over jou</h2><span className="sm">Dit moet je maar één keer invullen.</span></div>
-        <div className="bd bh-fg">
-          <Veld label="Je gsm-nummer" fout={f["profiel.gsm"]}><input type="tel" value={profiel.gsm ?? ""} onChange={(e) => zetP("gsm", e.target.value)} /></Veld>
-          <Veld label="Rijbewijs"><select value={profiel.rijbewijs ?? ""} onChange={(e) => zetP("rijbewijs", e.target.value)}><option value="">Kies…</option>{RIJBEWIJS.map((r) => <option key={r}>{r}</option>)}</select></Veld>
-          <Veld label="Straat en nummer"><input value={profiel.straat ?? ""} onChange={(e) => zetP("straat", e.target.value)} /></Veld>
-          <div className="bh-fg2-in">
-            <Veld label="Postcode"><input inputMode="numeric" value={profiel.postcode ?? ""} onChange={(e) => zetP("postcode", e.target.value)} /></Veld>
-            <Veld label="Gemeente"><input value={profiel.gemeente ?? ""} onChange={(e) => zetP("gemeente", e.target.value)} /></Veld>
-          </div>
-          <Veld label="Naam ouder of voogd *" fout={f["profiel.ouder_naam"]}><input value={profiel.ouder_naam ?? ""} onChange={(e) => zetP("ouder_naam", e.target.value)} /></Veld>
-          <Veld label="Gsm ouder of voogd *" fout={f["profiel.ouder_gsm"]}><input type="tel" value={profiel.ouder_gsm ?? ""} onChange={(e) => zetP("ouder_gsm", e.target.value)} /></Veld>
-          <Veld label="E-mail ouder of voogd"><input type="email" value={profiel.ouder_email ?? ""} onChange={(e) => zetP("ouder_email", e.target.value)} /></Veld>
-          <Veld label="Talen die je spreekt" hint="Bv. Nederlands, Frans, Engels"><input value={profiel.talen ?? ""} onChange={(e) => zetP("talen", e.target.value)} /></Veld>
-          <Veld label="Iets waar we rekening mee moeten houden?" hint="Bv. allergie, medicatie, een afspraak met de school. Enkel de stagebegeleiding ziet dit." full>
-            <textarea value={profiel.aandacht ?? ""} onChange={(e) => zetP("aandacht", e.target.value)} />
-          </Veld>
-          <div className="f full">
-            <Vink checked={!!profiel.toestemming} onChange={(v) => zetP("toestemming", v)} fout={!!f["profiel.toestemming"]}>
-              Mijn ouders weten welke stageplaatsen ik kies en gaan akkoord. *
-            </Vink>
-          </div>
-        </div>
-      </section>
-
       {keuzes.map((k, i) => {
         const p = `keuze${i + 1}.`;
         const bekend = k.winkel ? plaatsen.find((x) => norm(x.naam) === norm(k.winkel ?? "")) : undefined;
@@ -136,6 +111,15 @@ export default function Top3Formulier({
           </section>
         );
       })}
+
+      <section className={`bh-card${f["profiel.toestemming"] ? " pt-fout" : ""}`}>
+        <div className="bd">
+          <Vink checked={!!profiel.toestemming} onChange={(v) => zetP("toestemming", v)} fout={!!f["profiel.toestemming"]}>
+            Mijn ouders weten welke stageplaatsen ik kies en gaan akkoord. *
+          </Vink>
+          {f["profiel.toestemming"] && <small className="pt-foutmelding">{f["profiel.toestemming"]}</small>}
+        </div>
+      </section>
 
       <Voet bezig={bezig} bewaar={() => verstuur(false)} dien={() => verstuur(true)} dienLabel="Top 3 indienen" ok={res?.ok} fout={res?.fout} />
     </div>

@@ -68,8 +68,6 @@ const leeg = (v: unknown) => v === undefined || v === null || String(v).trim() =
 /** Geeft de lijst met ontbrekende of foute velden (sleutels zoals "profiel.ouder_naam" of "keuze1.winkel"). */
 export function top3Fouten(profiel: Profiel, keuzes: Keuze[]): Record<string, string> {
   const f: Record<string, string> = {};
-  if (leeg(profiel.ouder_naam)) f["profiel.ouder_naam"] = "Vul dit in.";
-  if (leeg(profiel.ouder_gsm)) f["profiel.ouder_gsm"] = "Vul dit in.";
   if (!profiel.toestemming) f["profiel.toestemming"] = "Vink de toestemming aan.";
   [0, 1, 2].forEach((i) => {
     const k = keuzes[i] ?? {};
