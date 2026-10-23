@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { serverClient } from "@/lib/supabase/server";
 import { bezoeker, contractViaLink, tekstHash } from "@/lib/contract-server";
-import { effectief, gegevensFouten, type ContractGegevens, type Rol } from "@/lib/contract";
+import { adresFouten, adresSamen, effectief, gegevensFouten, type AdresDelen, type ContractGegevens, type Rol } from "@/lib/contract";
 import { mailFout, telFout, telMooi } from "@/lib/contactcheck";
 import { naGetekend } from "@/lib/contract-mails";
 
@@ -50,13 +50,21 @@ export async function contractBewaren(token: string, invoer: ContractGegevens): 
 export async function contractOndertekenen(
   token: string,
   rol: Rol,
-  invoer: { naam: string; plaats: string; handtekening: string; relatie?: string; adres?: string; akkoord: boolean },
+  invoer: { naam: string; plaats: string; handtekening: string; relatie?: string; adres?: AdresDelen; akkoord: boolean },
 ): Promise<ContractResultaat> {
   const velden: Record<string, string> = {};
   if (!invoer.akkoord) velden.akkoord = "Vink aan dat je akkoord gaat.";
   if (!tekst(invoer.naam)) velden.naam = "Vul je naam in.";
   if (!tekst(invoer.plaats)) velden.plaats = "Vul de plaats in.";
-  if (rol === "stagiair" && tekst(invoer.adres).length < 8) velden.adres = "Vul je volledige adres in (straat, nummer, postcode en gemeente).";
+  let adres = "";
+  if (rol === "stagiair") {
+    const a: AdresDelen = {
+      straat: tekst(invoer.adres?.straat, 150), nummer: tekst(invoer.adres?.nummer, 10), bus: tekst(invoer.adres?.bus, 10),
+      postcode: tekst(invoer.adres?.postcode, 4), gemeente: tekst(invoer.adres?.gemeente, 100),
+    };
+    Object.assign(velden, adresFouten(a));
+    adres = adresSamen(a);
+  }
   if (!invoer.handtekening?.startsWith("data:image/png;base64,")) velden.handtekening = "Zet je handtekening in het vak.";
   if (Object.keys(velden).length) return { fout: "Nog niet alles is ingevuld.", velden };
 
@@ -68,10 +76,10 @@ export async function contractOndertekenen(
     if (Object.keys(f).length) return { fout: MELDING.gegevens, velden: f };
   }
   // Vingerafdruk van de tekst zoals die nu getoond wordt (met het adres van de stagiair erin).
-  const hash = tekstHash(rol === "stagiair" ? { ...d, contract: { ...d.contract, gegevens: { ...d.contract.gegevens, stagiair_adres: tekst(invoer.adres) } } } : d);
+  const hash = tekstHash(rol === "stagiair" ? { ...d, contract: { ...d.contract, gegevens: { ...d.contract.gegevens, stagiair_adres: adres } } } : d);
   const extra: Record<string, string> = {};
   if (rol === "ouder" && invoer.relatie) extra.relatie = tekst(invoer.relatie, 40);
-  if (rol === "stagiair") extra.adres = tekst(invoer.adres, 300);
+  if (rol === "stagiair") extra.adres = adres;
   if (rol === "stagegever") extra.hoedanigheid = effectief(d).hoedanigheid;
   const { ip, browser } = await bezoeker();
   const { data, error } = await sb.rpc("contract_tekenen", {

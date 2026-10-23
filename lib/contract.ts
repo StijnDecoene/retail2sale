@@ -286,3 +286,31 @@ export function contractStatus(d: Pick<ContractData, "partijen" | "contract">) {
   const volgende = nodig.find((r) => !getekend(d, r)) ?? null;
   return { nodig, klaar, totaal: nodig.length, afgerond: klaar === nodig.length, volgende };
 }
+
+// ---------------------------------------------------------------------------
+// Adres in losse velden (straat, nummer, bus, postcode, gemeente)
+// ---------------------------------------------------------------------------
+export type AdresDelen = { straat: string; nummer: string; bus: string; postcode: string; gemeente: string };
+export const LEEG_ADRES: AdresDelen = { straat: "", nummer: "", bus: "", postcode: "", gemeente: "" };
+
+/** "Gullegemsestraat 41 bus 2, 8501 Heule" */
+export function adresSamen(a: AdresDelen) {
+  const straat = [a.straat.trim(), a.nummer.trim()].filter(Boolean).join(" ");
+  const bus = a.bus.trim() ? ` bus ${a.bus.trim().replace(/^bus\s*/i, "")}` : "";
+  return `${straat}${bus}, ${a.postcode.trim()} ${a.gemeente.trim()}`.trim();
+}
+
+/** Een eerder bewaard adres terug in delen (zo goed mogelijk). */
+export function adresSplits(s: string | undefined): AdresDelen {
+  const m = (s ?? "").match(/^(.*?)\s+(\d+[a-zA-Z]?)(?:\s*(?:bus|b\.?|\/)\s*([\w-]+))?\s*,\s*(\d{4})\s+(.+)$/);
+  return m ? { straat: m[1], nummer: m[2], bus: m[3] ?? "", postcode: m[4], gemeente: m[5] } : { ...LEEG_ADRES };
+}
+
+export function adresFouten(a: AdresDelen): Record<string, string> {
+  const f: Record<string, string> = {};
+  if (a.straat.trim().length < 2) f["adres.straat"] = "Vul je straat in.";
+  if (!/^\d+[a-zA-Z]?$/.test(a.nummer.trim())) f["adres.nummer"] = "Enkel het huisnummer, bv. 41 of 41A.";
+  if (!/^\d{4}$/.test(a.postcode.trim())) f["adres.postcode"] = "Vier cijfers.";
+  if (a.gemeente.trim().length < 2) f["adres.gemeente"] = "Vul je gemeente in.";
+  return f;
+}

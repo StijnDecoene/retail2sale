@@ -6,7 +6,7 @@ import ContractTekst from "@/components/contract/ContractTekst";
 import Handtekening from "@/components/contract/Handtekening";
 import Ondertekening from "@/components/contract/Ondertekening";
 import { Veld, Vink } from "@/app/portaal/Velden";
-import { HOEDANIGHEDEN, effectief, getekend, magTekenen, type ContractData, type ContractGegevens, type Rol, type Sectie } from "@/lib/contract";
+import { HOEDANIGHEDEN, adresSplits, effectief, getekend, magTekenen, type ContractData, type ContractGegevens, type Rol, type Sectie } from "@/lib/contract";
 import { contractBewaren, contractOndertekenen, type ContractResultaat } from "./acties";
 
 type Stap = "lezen" | "gegevens" | "tekenen";
@@ -184,7 +184,8 @@ function Tekenen({ d, token, rol, terug, klaar }: { d: ContractData; token: stri
   const g = effectief(d);
   const [naam, setNaam] = useState(rol === "stagegever" ? g.ondertekenaar : rol === "stagiair" ? `${d.leerling.voornaam} ${d.leerling.naam}` : "");
   const [relatie, setRelatie] = useState("moeder");
-  const [adres, setAdres] = useState(g.stagiair_adres);
+  const [adres, setAdres] = useState(adresSplits(g.stagiair_adres));
+  const zetA = (k: keyof typeof adres, v: string) => setAdres((x) => ({ ...x, [k]: v }));
   const [plaats, setPlaats] = useState("");
   const [akkoord, setAkkoord] = useState(false);
   const [png, setPng] = useState("");
@@ -222,9 +223,18 @@ function Tekenen({ d, token, rol, terug, klaar }: { d: ContractData; token: stri
             </Veld>
           )}
           {rol === "stagiair" && (
-            <Veld label="Je adres *" fout={f.adres} hint="Straat, nummer, postcode en gemeente. Dit komt in het contract." full>
-              <input value={adres} onChange={(e) => setAdres(e.target.value)} autoComplete="street-address" />
-            </Veld>
+            <div className="f full ct-adres" role="group" aria-label="Je adres">
+              <span>Je adres * <small className="pt-hint">(komt in het contract)</small></span>
+              <div className="ct-adres-rij1">
+                <Veld label="Straat *" fout={f["adres.straat"]}><input value={adres.straat} onChange={(e) => zetA("straat", e.target.value)} autoComplete="address-line1" /></Veld>
+                <Veld label="Nummer *" fout={f["adres.nummer"]}><input value={adres.nummer} onChange={(e) => zetA("nummer", e.target.value)} inputMode="numeric" /></Veld>
+                <Veld label="Bus of appartement"><input value={adres.bus} onChange={(e) => zetA("bus", e.target.value)} placeholder="optioneel" /></Veld>
+              </div>
+              <div className="ct-adres-rij2">
+                <Veld label="Postcode *" fout={f["adres.postcode"]}><input value={adres.postcode} onChange={(e) => zetA("postcode", e.target.value)} inputMode="numeric" maxLength={4} autoComplete="postal-code" /></Veld>
+                <Veld label="Gemeente *" fout={f["adres.gemeente"]}><input value={adres.gemeente} onChange={(e) => zetA("gemeente", e.target.value)} autoComplete="address-level2" /></Veld>
+              </div>
+            </div>
           )}
           <Veld label="Opgemaakt te *" fout={f.plaats} hint="De gemeente waar je nu tekent.">
             <input value={plaats} onChange={(e) => setPlaats(e.target.value)} />

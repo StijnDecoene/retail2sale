@@ -625,3 +625,7 @@ a.pt-stap:hover { border-color: var(--line-strong); color: var(--ink); }
 .pt-waarschuwing { margin: 4px 0 6px; padding: 7px 10px 7px 26px; background: #fbf0dc; color: #7a4a00; border-radius: 8px; font-size: 12.5px; }
 .bh-ct-waarschuwing { margin: 0 16px; }
 .bh-ct-waarschuwing ul { margin: 4px 0 0; padding-left: 18px; }
+.ct-adres { gap: 8px; }
+.ct-adres-rij1 { display: grid; grid-template-columns: minmax(0, 1fr) 110px 150px; gap: 10px; }
+.ct-adres-rij2 { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 10px; }
+@media (max-width: 560px) { .ct-adres-rij1 { grid-template-columns: minmax(0, 1fr) 90px; } .ct-adres-rij1 > :last-child { grid-column: 1 / -1; } }
