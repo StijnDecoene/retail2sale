@@ -13,8 +13,33 @@ Gebouwd met [Next.js](https://nextjs.org), gehost op [Vercel](https://vercel.com
 | `/documenten` | Documenten per stap van de stage, met filter per rol en zoeken |
 | `/privacy` | Voorlopige privacyverklaring (na te kijken door de school) |
 | Stel een vraag | Formulier in de kopbalk en onderaan elke pagina; bewaart de vraag in Supabase (tabel `vragen`) |
+| `/beheer` | Beheer voor begeleiders (inloggen via School): Overzicht, Leerlingen (met import van de klaslijst), Stageplaatsen, Vragen, Instellingen |
 
-Het stageportaal zelf (top 3, aanvraag, contract, werkrooster …) volgt in fase 1 van het technisch plan.
+Het leerlingportaal (top 3, aanvraag, contract, werkrooster …) en het inloggen voor stagiairs en stagegevers volgen in fase 1 van het technisch plan.
+
+## Beheer instellen (eenmalig, in Supabase)
+
+Alle tabellen van het stageplatform staan in een eigen schema **`stage`**. Zo botsen ze niet met andere tabellen in hetzelfde project (bv. `public.leerlingen`).
+
+1. **SQL Editor**: voer `supabase/migrations/20261023120000_stage_beheer.sql` uit. Dit maakt de tabellen, de toegangsregels en de startgegevens (begeleiders Stijn en Fien, blokstages 2026-2027) aan.
+2. **Integrations → Data API → Settings → Exposed schemas**: voeg `stage` toe en bewaar.
+3. **Authentication → URL Configuration → Redirect URLs**: voeg toe:
+   - `https://retail2sale.vercel.app/auth/callback`
+   - `https://retail2sale.vercel.app/**` (voor de previews kan ook `https://*-spes-nostra-heule.vercel.app/**`)
+
+   Verander de **Site URL** niet als het project ook voor een andere toepassing gebruikt wordt.
+
+### Inloggen met een link per e-mail
+Werkt meteen. Let op: de ingebouwde mailservice van Supabase stuurt enkel naar leden van de Supabase-organisatie en maar een paar mails per uur. Voor andere begeleiders: stel onder **Authentication → Emails → SMTP Settings** een eigen mailserver in (bv. Microsoft 365 of een mailservice).
+
+### Inloggen met Microsoft (aan te raden)
+1. Laat de ICT-beheerder in **Microsoft Entra ID** een app registreren: *App registrations → New registration*, enkel accounts van de school (single tenant), redirect URI (Web) = de **Callback URL** die Supabase toont onder *Authentication → Sign In / Providers → Azure*.
+2. Maak een *client secret* aan en noteer de *Application (client) ID* en de *Directory (tenant) ID*.
+3. In Supabase → **Authentication → Sign In / Providers → Azure**: zet aan, vul client ID en secret in, en als *Azure Tenant URL* `https://login.microsoftonline.com/<tenant-id>`.
+4. In Vercel → **Settings → Environment Variables**: `NEXT_PUBLIC_MICROSOFT_LOGIN` = `aan`, en daarna opnieuw deployen. De knop verschijnt dan op het inlogscherm.
+
+### Wie mag binnen
+Alleen adressen in **Instellingen → Begeleiders** (tabel `stage.begeleiders`). Een beheerder of de directie kan begeleiders toevoegen of hun toegang intrekken. Iemand die inlogt maar niet op de lijst staat, ziet "Geen toegang" en kan niets lezen: de databank zelf bewaakt dat (row level security).
 
 ## Online zetten
 

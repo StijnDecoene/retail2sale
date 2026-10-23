@@ -1,0 +1,159 @@
+import Link from "next/link";
+import { serverClient } from "@/lib/supabase/server";
+import { datumKort, schooljaarVan, tijdstip, vandaagIso, type Blok, type Dossier, type Leerling, type Vraag } from "@/lib/beheer";
+
+export const metadata = { title: "Overzicht" };
+
+export default async function Overzicht() {
+  const sj = schooljaarVan();
+  const vandaag = vandaagIso();
+  const sb = await serverClient();
+  const sbPub = await serverClient("public");
+
+  const [blokkenR, leerlingenR, plaatsenR, vragenR] = await Promise.all([
+    sb.from("blokken").select("*").eq("schooljaar", sj).order("start_datum"),
+    sb.from("leerlingen").select("id, klas, status").eq("schooljaar", sj),
+    sb.from("stageplaatsen").select("id", { count: "exact", head: true }).eq("status", "actief"),
+    sbPub.from("vragen").select("*").eq("status", "nieuw").order("aangemaakt_op", { ascending: false }).limit(5),
+  ]);
+
+  const blokken = (blokkenR.data ?? []) as Blok[];
+  const leerlingen = (leerlingenR.data ?? []) as Pick<Leerling, "id" | "klas" | "status">[];
+  const actief = leerlingen.filter((l) => l.status === "actief");
+  const vragen = (vragenR.data ?? []) as Vraag[];
+
+  const blok =
+    blokken.find((b) => b.start_datum <= vandaag && vandaag <= b.eind_datum) ??
+    blokken.find((b) => b.start_datum > vandaag) ??
+    blokken.at(-1);
+  const bezig = blok ? blok.start_datum <= vandaag && vandaag <= blok.eind_datum : false;
+
+  let dossiers: Dossier[] = [];
+  if (blok) {
+    const { data } = await sb.from("dossiers").select("*").eq("blok_id", blok.id);
+    dossiers = (data ?? []) as Dossier[];
+  }
+  const actiefIds = new Set(actief.map((l) => l.id));
+  const metPlaats = dossiers.filter((d) => d.stageplaats_id && actiefIds.has(d.leerling_id)).length;
+  const metBegeleider = dossiers.filter((d) => d.begeleider_id && actiefIds.has(d.leerling_id)).length;
+
+  const perKlas = new Map<string, number>();
+  actief.forEach((l) => perKlas.set(l.klas, (perKlas.get(l.klas) ?? 0) + 1));
+  const schemaFout = blokkenR.error;
+
+  return (
+    <>
+      <header className="bh-top">
+        <div>
+          <h1>Overzicht</h1>
+          <p className="sub">Onthaal, organisatie en sales · schooljaar {sj}</p>
+        </div>
+        {blok && (
+          <div className="bh-blokinfo">
+            <span className={bezig ? "pill ok" : "pill in"}>{bezig ? "Nu bezig" : "Volgende"}</span>
+            <b>{blok.naam}</b>
+            <span>{datumKort(blok.start_datum)} – {datumKort(blok.eind_datum)} · {blok.uren} uur</span>
+          </div>
+        )}
+      </header>
+
+      {schemaFout && (
+        <p className="bh-melding">
+          De databank is nog niet volledig ingesteld. Controleer of het schema <code>stage</code> zichtbaar is in Supabase
+          (Data API → Exposed schemas).
+        </p>
+      )}
+
+      <section className="bh-kpis" aria-label="Kerncijfers">
+        <Link href="/beheer/leerlingen" className="bh-kpi">
+          <span className="l">Actieve leerlingen</span>
+          <span className="v">{actief.length}</span>
+        </Link>
+        <Link href="/beheer/leerlingen" className="bh-kpi">
+          <span className="l">Stageplaats gekend{blok ? ` · ${blok.naam}` : ""}</span>
+          <span className="v">{metPlaats} <small>/ {actief.length}</small></span>
+          <span className="meter"><i style={{ width: `${actief.length ? (metPlaats / actief.length) * 100 : 0}%` }} /></span>
+        </Link>
+        <Link href="/beheer/leerlingen" className="bh-kpi">
+          <span className="l">Begeleider toegewezen</span>
+          <span className="v">{metBegeleider} <small>/ {actief.length}</small></span>
+          <span className="meter"><i style={{ width: `${actief.length ? (metBegeleider / actief.length) * 100 : 0}%` }} /></span>
+        </Link>
+        <Link href="/beheer/stageplaatsen" className="bh-kpi">
+          <span className="l">Stageplaatsen die meewerken</span>
+          <span className="v">{plaatsenR.count ?? 0}</span>
+        </Link>
+        <Link href="/beheer/vragen" className={`bh-kpi${vragen.length ? " hot" : ""}`}>
+          <span className="l">Nieuwe vragen</span>
+          <span className="v">{vragen.length}</span>
+        </Link>
+      </section>
+
+      <div className="bh-grid2">
+        <section className="bh-card">
+          <div className="hd"><h2>Actie nodig</h2></div>
+          <div className="bh-lijst">
+            {leerlingen.length === 0 && (
+              <Link href="/beheer/leerlingen/import" className="bh-rij">
+                <span className="sev warn" />
+                <span className="t">Nog geen leerlingen<small>importeer de klaslijst uit Smartschool</small></span>
+                <span className="pijl">→</span>
+              </Link>
+            )}
+            {actief.length - metPlaats > 0 && blok && (
+              <Link href="/beheer/leerlingen?filter=zonder-plaats" className="bh-rij">
+                <span className="sev warn" />
+                <span className="t">Nog geen stageplaats<small>{blok.naam}</small></span>
+                <span className="c">{actief.length - metPlaats}</span>
+              </Link>
+            )}
+            {actief.length - metBegeleider > 0 && blok && (
+              <Link href="/beheer/leerlingen?filter=zonder-begeleider" className="bh-rij">
+                <span className="sev in" />
+                <span className="t">Nog geen begeleider toegewezen<small>{blok.naam}</small></span>
+                <span className="c">{actief.length - metBegeleider}</span>
+              </Link>
+            )}
+            {vragen.map((v) => (
+              <Link href="/beheer/vragen" className="bh-rij" key={v.id}>
+                <span className="sev bad" />
+                <span className="t">
+                  Vraag van {v.naam}
+                  <small>{v.onderwerp ?? "Geen onderwerp"} · {tijdstip(v.aangemaakt_op)}</small>
+                </span>
+                <span className="pijl">→</span>
+              </Link>
+            ))}
+            {leerlingen.length > 0 && actief.length === metPlaats && actief.length === metBegeleider && vragen.length === 0 && (
+              <p className="bh-leeg">Niets dringends. Alles is in orde.</p>
+            )}
+          </div>
+        </section>
+
+        <section className="bh-card">
+          <div className="hd"><h2>Leerlingen per klas</h2></div>
+          {perKlas.size === 0 ? (
+            <p className="bh-leeg">Nog geen leerlingen voor {sj}.</p>
+          ) : (
+            <table className="bh-tabel">
+              <thead><tr><th>Klas</th><th className="r">Actief</th></tr></thead>
+              <tbody>
+                {[...perKlas.entries()].sort().map(([k, n]) => (
+                  <tr key={k}><td><Link prefetch={false} href={`/beheer/leerlingen?klas=${encodeURIComponent(k)}`}>{k}</Link></td><td className="r">{n}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          <div className="hd" style={{ borderTop: "1px solid var(--line)" }}><h2>Blokstages {sj}</h2></div>
+          <table className="bh-tabel">
+            <tbody>
+              {blokken.map((b) => (
+                <tr key={b.id}><td><b>{b.naam}</b></td><td>{datumKort(b.start_datum)} – {datumKort(b.eind_datum)}</td><td className="r">{b.uren} u</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      </div>
+    </>
+  );
+}

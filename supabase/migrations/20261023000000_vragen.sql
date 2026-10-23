@@ -24,6 +24,9 @@ comment on table public.vragen is 'Vragen uit het contactformulier van retail2sa
 
 alter table public.vragen enable row level security;
 
+-- Bezoekers mogen enkel invoegen (Supabase geeft dit niet altijd automatisch).
+grant insert on public.vragen to anon;
+
 -- Bezoekers (niet ingelogd) mogen enkel een nieuwe vraag toevoegen, nooit lezen of wijzigen.
 drop policy if exists "bezoekers kunnen een vraag stellen" on public.vragen;
 create policy "bezoekers kunnen een vraag stellen"

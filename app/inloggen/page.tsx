@@ -1,15 +1,24 @@
 import type { Metadata } from "next";
 import Logos from "@/components/Logos";
 import { IcVink } from "@/components/Icons";
+import { redirect } from "next/navigation";
 import RolKeuze, { type Rol } from "./RolKeuze";
+import { supabaseIngesteld } from "@/lib/supabase/env";
+import { huidigeGebruiker } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Inloggen" };
 
 const ROLLEN: Rol[] = ["stagegever", "stagiair", "school"];
 
-export default async function Inloggen({ searchParams }: { searchParams: Promise<{ rol?: string }> }) {
-  const { rol } = await searchParams;
+export default async function Inloggen({ searchParams }: { searchParams: Promise<{ rol?: string; fout?: string }> }) {
+  const { rol, fout } = await searchParams;
   const start: Rol = ROLLEN.includes(rol as Rol) ? (rol as Rol) : "stagiair";
+
+  // Al ingelogd als begeleider? Dan meteen naar het beheer.
+  if (supabaseIngesteld()) {
+    const { begeleider } = await huidigeGebruiker();
+    if (begeleider) redirect("/beheer");
+  }
 
   return (
     <main className="login">
@@ -29,7 +38,7 @@ export default async function Inloggen({ searchParams }: { searchParams: Promise
         <span className="copy">© {new Date().getFullYear()} Spes Nostra Heule</span>
       </div>
       <div className="login-form-kant">
-        <RolKeuze start={start} />
+        <RolKeuze start={start} fout={fout} />
       </div>
     </main>
   );

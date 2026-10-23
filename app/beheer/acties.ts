@@ -1,0 +1,307 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { huidigeGebruiker, serverClient } from "@/lib/supabase/server";
+import { leegNaarNull, schooljaarVan } from "@/lib/beheer";
+
+export type Resultaat = { ok?: string; fout?: string } | null;
+
+type DbFout = { code?: string; message?: string } | null;
+
+function vertaal(e: DbFout, wat = "Bewaren"): Resultaat {
+  if (!e) return null;
+  if (e.code === "42501") return { fout: "Je hebt hiervoor geen rechten." };
+  if (e.code === "23505") return { fout: "Dit bestaat al." };
+  if (e.code === "23514") return { fout: "Een van de velden heeft een ongeldige waarde." };
+  if (e.code === "PGRST106" || e.message?.includes("schema")) {
+    return { fout: "De databank is nog niet klaar: het schema 'stage' is niet zichtbaar via de Data API." };
+  }
+  return { fout: `${wat} lukte niet. Probeer opnieuw.` };
+}
+
+const s = (fd: FormData, k: string) => leegNaarNull(fd.get(k));
+
+// ---------------------------------------------------------------------------
+// Leerlingen
+// ---------------------------------------------------------------------------
+function leerlingVelden(fd: FormData) {
+  return {
+    voornaam: s(fd, "voornaam") ?? "",
+    naam: s(fd, "naam") ?? "",
+    klas: (s(fd, "klas") ?? "").toUpperCase(),
+    smartschool_gebruikersnaam: s(fd, "smartschool_gebruikersnaam"),
+    email: s(fd, "email")?.toLowerCase() ?? null,
+    gsm: s(fd, "gsm"),
+  };
+}
+
+export async function leerlingToevoegen(_: Resultaat, fd: FormData): Promise<Resultaat> {
+  const v = leerlingVelden(fd);
+  if (!v.voornaam || !v.naam || !v.klas) return { fout: "Vul voornaam, naam en klas in." };
+  const sb = await serverClient();
+  const { error } = await sb.from("leerlingen").insert({ ...v, schooljaar: s(fd, "schooljaar") ?? schooljaarVan() });
+  if (error) return vertaal(error);
+  revalidatePath("/beheer", "layout");
+  return { ok: `${v.voornaam} ${v.naam} is toegevoegd.` };
+}
+
+export async function leerlingBewaren(_: Resultaat, fd: FormData): Promise<Resultaat> {
+  const id = String(fd.get("id"));
+  const v = leerlingVelden(fd);
+  if (!v.voornaam || !v.naam || !v.klas) return { fout: "Vul voornaam, naam en klas in." };
+  const status = String(fd.get("status") ?? "actief");
+  const sb = await serverClient();
+  const { error } = await sb
+    .from("leerlingen")
+    .update({
+      ...v,
+      status,
+      status_van: status === "actief" ? null : s(fd, "status_van"),
+      status_tot: status === "ziek" ? s(fd, "status_tot") : null,
+      notities: s(fd, "notities"),
+    })
+    .eq("id", id);
+  if (error) return vertaal(error);
+  revalidatePath("/beheer", "layout");
+  return { ok: "Bewaard." };
+}
+
+export async function leerlingVerwijderen(fd: FormData) {
+  const sb = await serverClient();
+  await sb.from("leerlingen").delete().eq("id", String(fd.get("id")));
+  revalidatePath("/beheer", "layout");
+  redirect("/beheer/leerlingen");
+}
+
+export async function dossierBewaren(_: Resultaat, fd: FormData): Promise<Resultaat> {
+  const sb = await serverClient();
+  const rij = {
+    leerling_id: String(fd.get("leerling_id")),
+    blok_id: String(fd.get("blok_id")),
+    stageplaats_id: s(fd, "stageplaats_id"),
+    begeleider_id: s(fd, "begeleider_id"),
+    mentor_naam: s(fd, "mentor_naam"),
+    mentor_telefoon: s(fd, "mentor_telefoon"),
+    mentor_email: s(fd, "mentor_email")?.toLowerCase() ?? null,
+  };
+  const { error } = await sb.from("dossiers").upsert(rij, { onConflict: "leerling_id,blok_id" });
+  if (error) return vertaal(error);
+  revalidatePath("/beheer", "layout");
+  return { ok: "Stagegegevens bewaard." };
+}
+
+export type ImportRij = {
+  voornaam: string;
+  naam: string;
+  klas: string;
+  smartschool_gebruikersnaam: string | null;
+  email: string | null;
+};
+
+const sleutel = (x: { voornaam: string; naam: string; klas: string }) =>
+  `${x.voornaam} ${x.naam} ${x.klas}`.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+
+/** Klaslijst uit Smartschool: nieuwe leerlingen toevoegen, gekende bijwerken (klas, e-mail, gebruikersnaam). */
+export async function leerlingenImporteren(
+  schooljaar: string,
+  rijen: ImportRij[],
+): Promise<{ fout?: string; nieuw?: number; bijgewerkt?: number; ongewijzigd?: number }> {
+  if (!/^\d{4}-\d{4}$/.test(schooljaar)) return { fout: "Ongeldig schooljaar." };
+  const geldig = rijen
+    .map((r) => ({
+      voornaam: r.voornaam.trim(),
+      naam: r.naam.trim(),
+      klas: r.klas.trim().toUpperCase(),
+      smartschool_gebruikersnaam: r.smartschool_gebruikersnaam?.trim() || null,
+      email: r.email?.trim().toLowerCase() || null,
+    }))
+    .filter((r) => r.voornaam && r.naam && r.klas);
+  if (!geldig.length) return { fout: "Er staan geen geldige rijen in de lijst." };
+  if (geldig.length > 1000) return { fout: "Maximaal 1000 leerlingen per import." };
+
+  const sb = await serverClient();
+  const { data: bestaand, error: leesFout } = await sb
+    .from("leerlingen")
+    .select("id, voornaam, naam, klas, smartschool_gebruikersnaam, email")
+    .eq("schooljaar", schooljaar);
+  if (leesFout) return { fout: vertaal(leesFout, "Lezen")?.fout };
+
+  const opGebruiker = new Map<string, (typeof bestaand)[number]>();
+  const opMail = new Map<string, (typeof bestaand)[number]>();
+  const opNaam = new Map<string, (typeof bestaand)[number]>();
+  for (const b of bestaand ?? []) {
+    if (b.smartschool_gebruikersnaam) opGebruiker.set(b.smartschool_gebruikersnaam.toLowerCase(), b);
+    if (b.email) opMail.set(b.email, b);
+    opNaam.set(sleutel(b), b);
+  }
+
+  const nieuw: (ImportRij & { schooljaar: string })[] = [];
+  let bijgewerkt = 0;
+  let ongewijzigd = 0;
+  for (const r of geldig) {
+    const b =
+      (r.smartschool_gebruikersnaam && opGebruiker.get(r.smartschool_gebruikersnaam.toLowerCase())) ||
+      (r.email && opMail.get(r.email)) ||
+      opNaam.get(sleutel(r));
+    if (!b) {
+      nieuw.push({ ...r, schooljaar });
+      continue;
+    }
+    const wijziging: Partial<ImportRij> = {};
+    if (r.klas !== b.klas) wijziging.klas = r.klas;
+    if (r.email && r.email !== b.email) wijziging.email = r.email;
+    if (r.smartschool_gebruikersnaam && r.smartschool_gebruikersnaam !== b.smartschool_gebruikersnaam)
+      wijziging.smartschool_gebruikersnaam = r.smartschool_gebruikersnaam;
+    if (Object.keys(wijziging).length) {
+      const { error } = await sb.from("leerlingen").update(wijziging).eq("id", b.id);
+      if (error) return { fout: vertaal(error)?.fout };
+      bijgewerkt++;
+    } else ongewijzigd++;
+  }
+  if (nieuw.length) {
+    const { error } = await sb.from("leerlingen").insert(nieuw);
+    if (error) return { fout: vertaal(error, "Importeren")?.fout };
+  }
+  revalidatePath("/beheer", "layout");
+  return { nieuw: nieuw.length, bijgewerkt, ongewijzigd };
+}
+
+// ---------------------------------------------------------------------------
+// Stageplaatsen
+// ---------------------------------------------------------------------------
+function plaatsVelden(fd: FormData) {
+  const max = Number(fd.get("max_stagiairs") ?? 1);
+  const score = Number(fd.get("beoordeling") ?? 0);
+  return {
+    naam: s(fd, "naam") ?? "",
+    juridische_naam: s(fd, "juridische_naam"),
+    kbo: s(fd, "kbo"),
+    sector: s(fd, "sector"),
+    status: String(fd.get("status") ?? "actief"),
+    straat: s(fd, "straat"),
+    postcode: s(fd, "postcode"),
+    gemeente: s(fd, "gemeente"),
+    telefoon: s(fd, "telefoon"),
+    email: s(fd, "email")?.toLowerCase() ?? null,
+    website: s(fd, "website"),
+    contactpersoon: s(fd, "contactpersoon"),
+    max_stagiairs: Number.isFinite(max) ? Math.max(0, Math.min(20, Math.round(max))) : 1,
+    beoordeling: score >= 1 && score <= 5 ? Math.round(score) : null,
+    notities: s(fd, "notities"),
+  };
+}
+
+export async function plaatsToevoegen(_: Resultaat, fd: FormData): Promise<Resultaat> {
+  const v = plaatsVelden(fd);
+  if (!v.naam) return { fout: "Vul de naam van de stageplaats in." };
+  const sb = await serverClient();
+  const { data, error } = await sb.from("stageplaatsen").insert(v).select("id").single();
+  if (error) return vertaal(error);
+  revalidatePath("/beheer", "layout");
+  redirect(`/beheer/stageplaatsen/${data.id}?nieuw=1`);
+}
+
+export async function plaatsBewaren(_: Resultaat, fd: FormData): Promise<Resultaat> {
+  const v = plaatsVelden(fd);
+  if (!v.naam) return { fout: "Vul de naam van de stageplaats in." };
+  const sb = await serverClient();
+  const { error } = await sb.from("stageplaatsen").update(v).eq("id", String(fd.get("id")));
+  if (error) return vertaal(error);
+  revalidatePath("/beheer", "layout");
+  return { ok: "Bewaard." };
+}
+
+export async function plaatsVerwijderen(fd: FormData) {
+  const sb = await serverClient();
+  await sb.from("stageplaatsen").delete().eq("id", String(fd.get("id")));
+  revalidatePath("/beheer", "layout");
+  redirect("/beheer/stageplaatsen");
+}
+
+// ---------------------------------------------------------------------------
+// Vragen
+// ---------------------------------------------------------------------------
+export async function vraagBijwerken(fd: FormData) {
+  const sb = await serverClient("public");
+  const { begeleider } = await huidigeGebruiker();
+  const status = String(fd.get("status"));
+  await sb
+    .from("vragen")
+    .update({
+      status,
+      notitie: leegNaarNull(fd.get("notitie")),
+      behandeld_door: status === "nieuw" ? null : begeleider?.naam ?? null,
+    })
+    .eq("id", String(fd.get("id")));
+  revalidatePath("/beheer", "layout");
+}
+
+// ---------------------------------------------------------------------------
+// Instellingen
+// ---------------------------------------------------------------------------
+export async function blokBewaren(_: Resultaat, fd: FormData): Promise<Resultaat> {
+  const start = s(fd, "start_datum");
+  const eind = s(fd, "eind_datum");
+  if (!start || !eind) return { fout: "Vul begin- en einddatum in." };
+  if (eind < start) return { fout: "De einddatum ligt vóór de begindatum." };
+  const sb = await serverClient();
+  const { error } = await sb
+    .from("blokken")
+    .update({
+      naam: s(fd, "naam") ?? "Blokstage",
+      start_datum: start,
+      eind_datum: eind,
+      uren: Number(fd.get("uren")) || 120,
+      uren_per_week: Number(fd.get("uren_per_week")) || 24,
+      deadline_top3: s(fd, "deadline_top3"),
+    })
+    .eq("id", String(fd.get("id")));
+  if (error) return vertaal(error);
+  revalidatePath("/beheer", "layout");
+  return { ok: "Bewaard." };
+}
+
+export async function uitzonderingToevoegen(_: Resultaat, fd: FormData): Promise<Resultaat> {
+  const van = s(fd, "van");
+  const tot = s(fd, "tot") ?? van;
+  const naam = s(fd, "naam");
+  if (!van || !naam) return { fout: "Vul een datum en een omschrijving in." };
+  if (tot && tot < van) return { fout: "De einddatum ligt vóór de begindatum." };
+  const sb = await serverClient();
+  const { error } = await sb
+    .from("uitzonderingen")
+    .insert({ blok_id: String(fd.get("blok_id")), van, tot, naam, soort: String(fd.get("soort") ?? "vakantie") });
+  if (error) return vertaal(error);
+  revalidatePath("/beheer/instellingen");
+  return { ok: "Toegevoegd." };
+}
+
+export async function uitzonderingVerwijderen(fd: FormData) {
+  const sb = await serverClient();
+  await sb.from("uitzonderingen").delete().eq("id", String(fd.get("id")));
+  revalidatePath("/beheer/instellingen");
+}
+
+export async function begeleiderToevoegen(_: Resultaat, fd: FormData): Promise<Resultaat> {
+  const email = s(fd, "email")?.toLowerCase();
+  const naam = s(fd, "naam");
+  if (!email || !naam) return { fout: "Vul naam en e-mailadres in." };
+  const sb = await serverClient();
+  const { error } = await sb
+    .from("begeleiders")
+    .insert({ email, naam, rol: String(fd.get("rol") ?? "begeleider"), telefoon: s(fd, "telefoon") });
+  if (error) return vertaal(error);
+  revalidatePath("/beheer/instellingen");
+  return { ok: `${naam} kan nu inloggen met ${email}.` };
+}
+
+export async function begeleiderActiefZetten(fd: FormData) {
+  const sb = await serverClient();
+  await sb
+    .from("begeleiders")
+    .update({ actief: fd.get("actief") === "true" })
+    .eq("id", String(fd.get("id")));
+  revalidatePath("/beheer/instellingen");
+}
+
