@@ -44,6 +44,14 @@ export type Stageplaats = {
   notities: string | null;
 };
 
+/** Velden die de import van stageplaatsen kan invullen. */
+export const PLAATS_IMPORT_VELDEN = [
+  "naam", "juridische_naam", "kbo", "sector", "straat", "postcode", "gemeente",
+  "telefoon", "email", "website", "contactpersoon", "notities",
+] as const;
+export type PlaatsImportVeld = (typeof PLAATS_IMPORT_VELDEN)[number];
+export type PlaatsImportRij = Record<PlaatsImportVeld, string>;
+
 export const PLAATS_STATUS: Record<Stageplaats["status"], { label: string; toon: "ok" | "warn" | "mut" }> = {
   actief: { label: "Werkt mee", toon: "ok" },
   pauze: { label: "Even niet", toon: "warn" },

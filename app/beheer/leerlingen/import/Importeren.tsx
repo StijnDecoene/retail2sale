@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { leerlingenImporteren, type ImportRij } from "../../acties";
+import { leesTabel, raadKolommen } from "@/lib/tabel";
 
 type Veld = "voornaam" | "naam" | "klas" | "smartschool_gebruikersnaam" | "email";
 
@@ -14,46 +15,6 @@ const VELDEN: { k: Veld; label: string; verplicht?: boolean; woorden: string[] }
   { k: "email", label: "E-mailadres", woorden: ["e-mail", "email", "e-mailadres", "emailadres", "mail"] },
 ];
 
-/** Eenvoudige CSV-lezer: herkent ; , of tab als scheidingsteken en "aanhalingstekens". */
-function leesTabel(tekst: string): string[][] {
-  const regels = tekst.replace(/^﻿/, "").replace(/\r\n?/g, "\n").split("\n").filter((r) => r.trim() !== "");
-  if (!regels.length) return [];
-  const eerste = regels[0];
-  const sep = [ "\t", ";", "," ].map((s) => [s, eerste.split(s).length] as const).sort((a, b) => b[1] - a[1])[0][0];
-  return regels.map((regel) => {
-    const cellen: string[] = [];
-    let cel = "";
-    let tussen = false;
-    for (let i = 0; i < regel.length; i++) {
-      const c = regel[i];
-      if (c === '"') {
-        if (tussen && regel[i + 1] === '"') { cel += '"'; i++; }
-        else tussen = !tussen;
-      } else if (c === sep && !tussen) { cellen.push(cel.trim()); cel = ""; }
-      else cel += c;
-    }
-    cellen.push(cel.trim());
-    return cellen;
-  });
-}
-
-const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
-
-function raadKolommen(kop: string[]): Record<Veld, number> {
-  const res = {} as Record<Veld, number>;
-  const bezet = new Set<number>();
-  // Eerst exacte treffers (zodat "voornaam" niet als "naam" telt), dan gedeeltelijke.
-  for (const exact of [true, false]) {
-    for (const v of VELDEN) {
-      if (res[v.k] !== undefined) continue;
-      const i = kop.findIndex((h, idx) => !bezet.has(idx) && v.woorden.some((w) => (exact ? norm(h) === w : norm(h).includes(w))));
-      if (i >= 0) { res[v.k] = i; bezet.add(i); }
-    }
-  }
-  for (const v of VELDEN) if (res[v.k] === undefined) res[v.k] = -1;
-  return res;
-}
-
 export default function Importeren({ schooljaar }: { schooljaar: string }) {
   const [tekst, setTekst] = useState("");
   const [kolom, setKolom] = useState<Record<Veld, number> | null>(null);
@@ -63,7 +24,7 @@ export default function Importeren({ schooljaar }: { schooljaar: string }) {
   const tabel = useMemo(() => leesTabel(tekst), [tekst]);
   const kop = tabel[0] ?? [];
   const data = tabel.slice(1);
-  const map = kolom ?? (kop.length ? raadKolommen(kop) : null);
+  const map = kolom ?? (kop.length ? raadKolommen(kop, VELDEN) : null);
 
   const rijen: ImportRij[] = useMemo(() => {
     if (!map) return [];
