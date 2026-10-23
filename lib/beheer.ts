@@ -161,3 +161,24 @@ export const leegNaarNull = (v: FormDataEntryValue | null): string | null => {
   const s = String(v ?? "").trim();
   return s === "" ? null : s;
 };
+
+/** Sleutel om stageplaatsen te vergelijken op naam + gemeente (zonder hoofdletters, accenten of leestekens). */
+export const plaatsSleutel = (naam: string, gemeente: string | null) =>
+  `${naam} | ${gemeente ?? ""}`.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9|]+/g, " ").trim();
+/** Enkel de cijfers van een ondernemingsnummer. */
+export const kboCijfers = (k: string | null) => (k ?? "").replace(/\D/g, "");
+
+/** Bestaande stageplaats zoeken: eerst op ondernemingsnummer, dan op naam + gemeente. */
+export function zoekPlaats<P extends { naam: string; gemeente?: string | null; kbo?: string | null }>(
+  lijst: P[],
+  naam: string,
+  gemeente: string | null,
+  kbo: string | null,
+): P | undefined {
+  const k = kboCijfers(kbo);
+  const sleutel = plaatsSleutel(naam, gemeente);
+  return (
+    (k.length >= 9 ? lijst.find((p) => kboCijfers(p.kbo ?? null) === k) : undefined) ??
+    lijst.find((p) => plaatsSleutel(p.naam, p.gemeente ?? null) === sleutel)
+  );
+}
