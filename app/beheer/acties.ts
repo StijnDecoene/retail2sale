@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { mailFout, telFout, telMooi } from "@/lib/contactcheck";
 import { verstuurBevestiging } from "@/lib/bevestiging-versturen";
+import { contractKlaarzetten } from "@/lib/contract-server";
 import { redirect } from "next/navigation";
 import { huidigeGebruiker, serverClient } from "@/lib/supabase/server";
 import { kboCijfers, leegNaarNull, plaatsSleutel, zoekPlaats, schooljaarVan, PLAATS_IMPORT_VELDEN, type PlaatsImportRij, type PlaatsImportVeld } from "@/lib/beheer";
@@ -646,11 +647,13 @@ export async function aanvraagBeoordelen(_: Resultaat, fd: FormData): Promise<Re
   if (error) return vertaal(error);
   if (aR.data.status !== "ingediend") await sb.from("aanvragen").update({ status: "ingediend", ingediend_op: nuIso() }).eq("dossier_id", dossierId);
 
+  // Contract klaarzetten (zodat de link van de stagegever in de bevestiging staat).
+  const contract = await contractKlaarzetten(sb, dossierId, ik.naam).catch(() => ({ fout: "contract" }));
   // Bevestiging mailen naar stagegever en stagiair (als aangevinkt).
   const mail = fd.get("bevestiging") === "aan" ? await verstuurBevestiging(sb, dossierId, ik.id) : null;
   revalidatePath("/beheer", "layout");
   revalidatePath("/portaal");
-  const mailTekst = mail?.ok ? ` ${mail.ok}` : mail?.fout ? ` Let op: ${mail.fout}` : "";
+  const mailTekst = `${"nieuw" in contract && contract.nieuw ? " Het contract staat klaar." : ""}${mail?.ok ? ` ${mail.ok}` : mail?.fout ? ` Let op: ${mail.fout}` : ""}`;
   return {
     ok: `Aanvraag goedgekeurd. ${nieuwePlaats ? `Nieuwe stageplaats "${plaats.naam}" aangemaakt` : `Gekoppeld aan de bestaande stageplaats "${plaats.naam}"`}${anderePlaats ? " (de vorige stageplaats in dit dossier is vervangen)" : ""}.${mailTekst}`,
   };

@@ -9,7 +9,7 @@ import {
 const ROOT = process.cwd();
 const font = (p: string, f: string) => path.join(ROOT, "node_modules", "@fontsource", p, "files", f);
 let fontsKlaar = false;
-function fonts() {
+export function fonts() {
   if (fontsKlaar) return;
   Font.register({ family: "Figtree", fonts: [
     { src: font("figtree", "figtree-latin-400-normal.woff"), fontWeight: 400 },
@@ -23,10 +23,10 @@ function fonts() {
   Font.registerHyphenationCallback((w) => [w]);
   fontsKlaar = true;
 }
-const LOGO_SNH = path.join(ROOT, "public", "img", "logo-spes-nostra.png");
-const LOGO_R2S = path.join(ROOT, "public", "img", "logo-retail2sale.png");
+export const LOGO_SNH = path.join(ROOT, "public", "img", "logo-spes-nostra.png");
+export const LOGO_R2S = path.join(ROOT, "public", "img", "logo-retail2sale.png");
 
-const C = { ink: "#0e1a2b", ink2: "#3e4a5c", muted: "#5a6578", line: "#e3e7ee", blue: "#1d5baa", blueSoft: "#eaf1fb", red: "#c21f2e", ok: "#1e7a4f", okSoft: "#e5f3ec" };
+export const C = { ink: "#0e1a2b", ink2: "#3e4a5c", muted: "#5a6578", line: "#e3e7ee", blue: "#1d5baa", blueSoft: "#eaf1fb", red: "#c21f2e", ok: "#1e7a4f", okSoft: "#e5f3ec" };
 const s = StyleSheet.create({
   page: { fontFamily: "Figtree", fontSize: 10, color: C.ink, paddingTop: 36, paddingBottom: 54, paddingHorizontal: 44, lineHeight: 1.45 },
   kop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: C.line, marginBottom: 18 },
