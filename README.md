@@ -22,14 +22,16 @@ Het stageportaal zelf (top 3, aanvraag, contract, werkrooster …) volgt in fase
 
 1. Gebruik het Supabase-project **SNH3** (regio eu-west-1, Ierland) van de organisatie Spes Nostra Heule. Een nieuw project kan ook, zolang de regio in de EU ligt.
 2. Open **SQL Editor**, plak de inhoud van `supabase/migrations/20261023000000_vragen.sql` en klik op **Run**.
-3. Ga naar **Project Settings → API** en noteer de **Project URL** en de **anon public** key.
+3. Klik bovenaan op **Connect** en noteer de **Project URL** en de **publishable key**. Nooit de `service_role`- of `secret`-key gebruiken.
 
 ### 2. Vercel
 
 1. In Vercel: **Add New → Project**, kies de GitHub-repository `retail2sale` en klik op **Import**.
 2. Open **Environment Variables** en voeg toe:
    - `NEXT_PUBLIC_SUPABASE_URL` = de Project URL
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = de anon public key
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` = de publishable key (`sb_publishable_…`)
+
+   Tip: in Supabase → **Connect → Framework → Next.js** staan beide regels klaar; je kan ze in één keer in het veld *Key* van Vercel plakken.
 3. Klik op **Deploy**. De site staat daarna op een adres `….vercel.app`.
 
 Elke wijziging die op de branch `main` komt, zet Vercel automatisch online. Wijzigingen op een andere branch krijgen een eigen testadres (preview).
