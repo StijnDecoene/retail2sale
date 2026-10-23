@@ -14,6 +14,9 @@ function vertaal(e: DbFout, wat = "Bewaren"): Resultaat {
   if (e.code === "42501") return { fout: "Je hebt hiervoor geen rechten." };
   if (e.code === "23505") return { fout: "Dit bestaat al." };
   if (e.code === "23514") return { fout: "Een van de velden heeft een ongeldige waarde." };
+  if (e.code === "PGRST204" || e.code === "42703") {
+    return { fout: "De databank mist nog een kolom. Voer de nieuwste migratie uit in Supabase (SQL Editor)." };
+  }
   if (e.code === "PGRST106" || e.message?.includes("schema")) {
     return { fout: "De databank is nog niet klaar: het schema 'stage' is niet zichtbaar via de Data API." };
   }
@@ -408,10 +411,16 @@ export async function blokBewaren(_: Resultaat, fd: FormData): Promise<Resultaat
   const eind = s(fd, "eind_datum");
   if (!start || !eind) return { fout: "Vul begin- en einddatum in." };
   if (eind < start) return { fout: "De einddatum ligt vóór de begindatum." };
+  // Klassen die meedoen: alle aangevinkt = null (ook klassen die later bijkomen doen dan mee).
+  const aangeboden = fd.getAll("klassen_aangeboden").map(String);
+  const gekozen = fd.getAll("klassen").map(String).filter((k) => aangeboden.includes(k));
+  if (aangeboden.length && !gekozen.length) return { fout: "Vink minstens één klas aan die meedoet." };
+  const klassen = !aangeboden.length || gekozen.length === aangeboden.length ? null : gekozen;
   const sb = await serverClient();
   const { error } = await sb
     .from("blokken")
     .update({
+      klassen,
       naam: s(fd, "naam") ?? "Blokstage",
       start_datum: start,
       eind_datum: eind,
