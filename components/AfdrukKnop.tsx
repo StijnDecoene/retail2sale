@@ -1,6 +1,6 @@
 "use client";
 
-/** Afdrukken (of bewaren als pdf); klapt eerst alle vragen open zodat ze mee op papier komen. */
+/** Afdrukken; klapt eerst alle vragen open zodat ze mee op papier komen. */
 export default function AfdrukKnop() {
   return (
     <button
@@ -11,7 +11,7 @@ export default function AfdrukKnop() {
         window.print();
       }}
     >
-      Afdrukken of bewaren als pdf
+      Afdrukken
     </button>
   );
 }
