@@ -173,6 +173,7 @@ export async function leerlingenImporteren(
 export type KoppelRij = {
   leerling_id: string;
   stageplaats_id: string;
+  begeleider_id: string;
   mentor_naam: string;
   mentor_telefoon: string;
   mentor_email: string;
@@ -180,9 +181,10 @@ export type KoppelRij = {
 };
 
 /**
- * Stageplaats en mentor per leerling in het dossier van één blokstage zetten (bv. uit een stagelijst).
- * Enkel lege velden worden ingevuld. Heeft het dossier al een andere stageplaats, dan blijft die staan
- * en wordt de rij als "anders" gemeld. Ook de gsm van de leerling wordt aangevuld als die nog leeg is.
+ * Stageplaats, mentor en begeleider per leerling in het dossier van één blokstage zetten (bv. uit een stagelijst).
+ * Enkel lege velden worden ingevuld. Heeft het dossier al een andere stageplaats, dan blijft die staan (met melding)
+ * en worden ook de mentorgegevens niet overgenomen; de begeleider wordt wel aangevuld als die nog leeg is.
+ * Ook de gsm van de leerling wordt aangevuld als die nog leeg is.
  */
 export async function dossiersKoppelen(
   blokId: string,
@@ -193,25 +195,29 @@ export async function dossiersKoppelen(
   const sb = await serverClient();
 
   const ids = [...new Set(rijen.map((r) => r.leerling_id))];
-  const [bR, dR, lR, pR] = await Promise.all([
+  const [bR, dR, lR, pR, gR] = await Promise.all([
     sb.from("blokken").select("id").eq("id", blokId).maybeSingle(),
     sb.from("dossiers").select("*").eq("blok_id", blokId).in("leerling_id", ids),
     sb.from("leerlingen").select("id, voornaam, naam, gsm").in("id", ids),
     sb.from("stageplaatsen").select("id, naam"),
+    sb.from("begeleiders").select("id"),
   ]);
-  const leesFout = bR.error ?? dR.error ?? lR.error ?? pR.error;
+  const leesFout = bR.error ?? dR.error ?? lR.error ?? pR.error ?? gR.error;
   if (leesFout) return { fout: vertaal(leesFout, "Lezen")?.fout };
   if (!bR.data) return { fout: "Deze blokstage bestaat niet." };
 
   const dossiers = new Map((dR.data ?? []).map((d) => [d.leerling_id as string, d]));
   const leerlingen = new Map((lR.data ?? []).map((l) => [l.id as string, l]));
   const plaatsen = new Map((pR.data ?? []).map((p) => [p.id as string, p.naam as string]));
+  const begeleiders = new Set((gR.data ?? []).map((g) => g.id as string));
 
   let gekoppeld = 0, aangevuld = 0, ongewijzigd = 0;
   const anders: string[] = [];
   for (const r of rijen) {
     const l = leerlingen.get(r.leerling_id);
-    if (!l || !plaatsen.has(r.stageplaats_id)) continue;
+    const plaats = plaatsen.has(r.stageplaats_id) ? r.stageplaats_id : null;
+    const begeleider = begeleiders.has(r.begeleider_id) ? r.begeleider_id : null;
+    if (!l || (!plaats && !begeleider)) continue;
     const d = dossiers.get(r.leerling_id);
     const mentor = {
       mentor_naam: r.mentor_naam.trim() || null,
@@ -220,21 +226,23 @@ export async function dossiersKoppelen(
     };
 
     if (!d) {
-      const { error } = await sb.from("dossiers").insert({ leerling_id: r.leerling_id, blok_id: blokId, stageplaats_id: r.stageplaats_id, ...mentor });
+      const { error } = await sb.from("dossiers").insert({
+        leerling_id: r.leerling_id, blok_id: blokId, stageplaats_id: plaats, begeleider_id: begeleider, ...(plaats ? mentor : {}),
+      });
       if (error) return { fout: vertaal(error)?.fout };
-      gekoppeld++;
-    } else if (d.stageplaats_id && d.stageplaats_id !== r.stageplaats_id) {
-      anders.push(`${l.voornaam} ${l.naam}: staat al bij ${plaatsen.get(d.stageplaats_id) ?? "een andere stageplaats"}`);
-      continue;
+      if (plaats) gekoppeld++; else aangevuld++;
     } else {
       const w: Record<string, string | null> = {};
-      if (!d.stageplaats_id) w.stageplaats_id = r.stageplaats_id;
-      for (const [k, v] of Object.entries(mentor)) if (v && !d[k]) w[k] = v;
+      const anderePlaats = !!(plaats && d.stageplaats_id && d.stageplaats_id !== plaats);
+      if (anderePlaats) anders.push(`${l.voornaam} ${l.naam}: staat al bij ${plaatsen.get(d.stageplaats_id) ?? "een andere stageplaats"}`);
+      if (plaats && !d.stageplaats_id) w.stageplaats_id = plaats;
+      if (plaats && !anderePlaats) for (const [k, v] of Object.entries(mentor)) if (v && !d[k]) w[k] = v;
+      if (begeleider && !d.begeleider_id) w.begeleider_id = begeleider;
       if (Object.keys(w).length) {
         const { error } = await sb.from("dossiers").update(w).eq("id", d.id);
         if (error) return { fout: vertaal(error)?.fout };
         if (w.stageplaats_id) gekoppeld++; else aangevuld++;
-      } else ongewijzigd++;
+      } else if (!anderePlaats) ongewijzigd++;
     }
     if (r.gsm.trim() && !l.gsm) {
       await sb.from("leerlingen").update({ gsm: r.gsm.trim() }).eq("id", l.id);
