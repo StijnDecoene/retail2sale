@@ -121,7 +121,7 @@ export function aanvraagFouten(g: AanvraagGegevens, startBlok: string): Record<s
     ["bedrijf.naam", g.bedrijf?.naam], ["bedrijf.straat", g.bedrijf?.straat],
     ["bedrijf.postcode", g.bedrijf?.postcode], ["bedrijf.gemeente", g.bedrijf?.gemeente], ["bedrijf.soort", g.bedrijf?.soort],
     ["mentor.naam", g.mentor?.naam], ["mentor.email", g.mentor?.email],
-    ["stagiair.geboortedatum", g.stagiair?.geboortedatum], ["stagiair.nood_naam", g.stagiair?.nood_naam], ["stagiair.nood_tel", g.stagiair?.nood_tel],
+    ["stagiair.geboortedatum", g.stagiair?.geboortedatum], ["stagiair.gsm", g.stagiair?.gsm], ["stagiair.nood_naam", g.stagiair?.nood_naam], ["stagiair.nood_tel", g.stagiair?.nood_tel],
   ];
   if (g.verantwoordelijke?.zelfde === false) req.push(["verantwoordelijke.naam", g.verantwoordelijke?.naam]);
   req.forEach(([k, v]) => { if (leeg(v)) f[k] = "Vul dit in."; });

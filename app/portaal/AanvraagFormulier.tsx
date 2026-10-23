@@ -188,7 +188,7 @@ export default function AanvraagFormulier({
             vanJaar={Number(startBlok.slice(0, 4)) - 25}
             totJaar={Number(startBlok.slice(0, 4)) - 14}
           />
-          {tekst("stagiair", "gsm", "Je gsm-nummer", { type: "tel", hint: "Bv. 0470 12 34 56" })}
+          {tekst("stagiair", "gsm", "Je gsm-nummer *", { type: "tel", hint: "Bv. 0470 12 34 56" })}
           {tekst("stagiair", "nood_naam", "Te verwittigen bij nood: naam *")}
           {tekst("stagiair", "nood_tel", "Te verwittigen bij nood: telefoon *", { type: "tel" })}
         </div>
