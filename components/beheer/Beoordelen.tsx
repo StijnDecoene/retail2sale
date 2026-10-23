@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, type ReactNode } from "react";
 import type { Resultaat } from "@/app/beheer/acties";
 
 type Props = {
@@ -10,10 +10,12 @@ type Props = {
   keuzes?: { nr: number; label: string }[];
   goedLabel: string;
   uitleg?: string;
+  /** Extra velden die enkel bij goedkeuren verschijnen (bv. bevestiging mailen). */
+  extra?: ReactNode;
 };
 
 /** Goedkeuren of laten aanpassen, met feedback voor de leerling. */
-export default function Beoordelen({ actie, dossierId, keuzes, goedLabel, uitleg }: Props) {
+export default function Beoordelen({ actie, dossierId, keuzes, goedLabel, uitleg, extra }: Props) {
   const [res, verzend, bezig] = useActionState(actie, null);
   const [besluit, setBesluit] = useState<"goedkeuren" | "aanpassen">("goedkeuren");
   return (
@@ -35,6 +37,7 @@ export default function Beoordelen({ actie, dossierId, keuzes, goedLabel, uitleg
         </fieldset>
       )}
       {besluit === "goedkeuren" && uitleg && <p className="hint">{uitleg}</p>}
+      {besluit === "goedkeuren" && extra}
       <label className="f">
         {besluit === "aanpassen" ? "Wat moet de leerling aanpassen? (verplicht)" : "Bericht voor de leerling (optioneel)"}
         <textarea name="feedback" required={besluit === "aanpassen"} />

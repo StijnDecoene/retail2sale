@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ActieKnop } from "@/components/beheer/Formulier";
+import Formulier, { ActieKnop } from "@/components/beheer/Formulier";
 import Beoordelen from "@/components/beheer/Beoordelen";
 import { AanvraagSamenvatting, Top3Samenvatting } from "@/components/portaal/Samenvatting";
-import { aanvraagBeoordelen, beoordelingIntrekken, top3Beoordelen } from "../../acties";
+import { aanvraagBeoordelen, beoordelingIntrekken, bevestigingMailen, top3Beoordelen } from "../../acties";
+import { laadBevestiging } from "@/lib/bevestiging-server";
+import { bevestigingMail } from "@/lib/bevestiging-mail";
+import { mailAfzender, mailIngesteld } from "@/lib/mail-server";
+import { siteAdres } from "@/lib/bevestiging-versturen";
 import { serverClient, type Begeleider } from "@/lib/supabase/server";
 import { datumKort, tijdstip, volledigeNaam, zoekPlaats, type Blok, type Dossier, type Leerling, type Stageplaats } from "@/lib/beheer";
 import { stapStatus, type AanvraagRij, type Beoordeling, type Profiel, type StapStatus, type Top3Rij } from "@/lib/portaal";
@@ -49,6 +53,15 @@ export default async function DossierPagina({ params }: { params: Promise<{ id: 
     : match
       ? `Bij goedkeuren wordt het dossier gekoppeld aan de bestaande stageplaats "${match.naam}${match.gemeente ? `, ${match.gemeente}` : ""}" (lege velden worden aangevuld).`
       : `Bij goedkeuren wordt "${bedrijf.naam}" als nieuwe stageplaats aangemaakt en aan het dossier gekoppeld.`;
+
+  const mailAan = mailIngesteld();
+  const bevestiging = ba?.status === "goedgekeurd" ? await laadBevestiging(sb, id) : null;
+  const mail = bevestiging ? bevestigingMail(bevestiging, await siteAdres()) : null;
+  const { data: mR } = bevestiging ? await sb.from("mails").select("*").eq("dossier_id", id).order("verstuurd_op", { ascending: false }) : { data: null };
+  const mails = (mR ?? []) as { id: string; aan: string[]; verstuurd_op: string; fout: string | null; door: string | null }[];
+  const mailto = mail
+    ? `mailto:${mail.aan.join(",")}?cc=${encodeURIComponent(mail.cc.join(","))}&subject=${encodeURIComponent(mail.onderwerp)}&body=${encodeURIComponent(mail.tekst)}`
+    : "";
 
   const beoordeeld = (b: Beoordeling) => (
     <p className="sm">
@@ -138,13 +151,68 @@ export default async function DossierPagina({ params }: { params: Promise<{ id: 
             </div>
           )}
           {aanvraag && ba?.status !== "goedgekeurd" && aanvraag.status === "ingediend" && (
-            <Beoordelen actie={aanvraagBeoordelen} dossierId={id} goedLabel="Aanvraag goedkeuren" uitleg={plaatsUitleg} />
+            <Beoordelen
+              actie={aanvraagBeoordelen}
+              dossierId={id}
+              goedLabel="Aanvraag goedkeuren"
+              uitleg={plaatsUitleg}
+              extra={
+                <label className="bh-vink">
+                  <input type="checkbox" name="bevestiging" value="aan" defaultChecked={mailAan} disabled={!mailAan} />
+                  <span>
+                    Bevestiging mailen naar stagegever en stagiair, met de pdf en de infobrochure
+                    {!mailAan && <small> (mail versturen is nog niet ingesteld: zet de mail daarna klaar in je eigen mailprogramma)</small>}
+                  </span>
+                </label>
+              }
+            />
           )}
           {aanvraag && aanvraag.status === "concept" && ba?.status !== "goedgekeurd" && (
             <p className="bh-leeg">De leerling werkt nog aan de aanvraag (concept).</p>
           )}
         </section>
       </div>
+
+      {bevestiging && mail && (
+        <section className="bh-card">
+          <div className="hd">
+            <h2>Bevestiging aan stagegever en stagiair</h2>
+            {mails.some((x) => !x.fout) ? <span className="pill ok">Gemaild</span> : <span className="pill warn">Nog niet gemaild</span>}
+          </div>
+          <div className="bd bh-stack">
+            <p className="sm">
+              Aan: {mail.aan.join(", ") || "geen e-mailadres"} · cc {mail.cc.join(", ")} · van {mailAfzender()}
+              <br />Onderwerp: {mail.onderwerp}
+            </p>
+            <div className="bh-acties">
+              <a className="bh-btn" href={`/beheer/dossiers/${id}/bevestiging?soort=mail`} target="_blank" rel="noreferrer">Mail bekijken</a>
+              <a className="bh-btn" href={`/beheer/dossiers/${id}/bevestiging`} target="_blank" rel="noreferrer">Pdf bekijken</a>
+              <a className="bh-btn" href={`/beheer/dossiers/${id}/bevestiging?download=1`}>Pdf downloaden</a>
+              <a className="bh-btn" href="/docs/infobrochure-stage-2026-2027.pdf" target="_blank" rel="noreferrer">Infobrochure</a>
+            </div>
+            {mailAan ? (
+              <Formulier actie={bevestigingMailen} knop={mails.some((x) => !x.fout) ? "Opnieuw mailen" : "Bevestiging mailen"} className="bh-form-inline">
+                <input type="hidden" name="dossier_id" value={id} />
+              </Formulier>
+            ) : (
+              <div className="bh-melding">
+                Mail versturen vanuit {mailAfzender()} is nog niet ingesteld. Tot dan: download de pdf, klik op{" "}
+                <a href={mailto}><b>Mail klaarzetten</b></a> en voeg de pdf en de infobrochure toe als bijlage.
+              </div>
+            )}
+            {mails.length > 0 && (
+              <ul className="bh-maillog">
+                {mails.map((x) => (
+                  <li key={x.id}>
+                    {tijdstip(x.verstuurd_op)} · {x.fout ? <span className="bh-fout">mislukt: {x.fout}</span> : <>naar {x.aan.join(", ")}</>}
+                    {x.door ? ` · ${namen.get(x.door) ?? ""}` : ""}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+      )}
     </>
   );
 }

@@ -553,3 +553,8 @@ a.pt-stap:hover { border-color: var(--line-strong); color: var(--ink); }
 .bh-beoordelen, .bh-beoordeel { border-top: 1px solid var(--line); }
 .bh-beoordeeld { display: flex; justify-content: space-between; align-items: center; gap: 10px; border-top: 1px solid var(--line); background: #fafbfc; }
 .pt-datum { display: grid; grid-template-columns: 80px minmax(0, 1fr) 96px; gap: 8px; }
+.bh-vink { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer; }
+.bh .bh-vink input { width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--blue); flex: none; }
+.bh-vink small { font-weight: 500; color: var(--muted); }
+.bh-form-inline { padding: 0; }
+.bh-maillog { margin: 0; padding-left: 18px; font-size: 12.5px; color: var(--muted); }
