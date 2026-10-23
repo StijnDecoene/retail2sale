@@ -16,9 +16,10 @@ export default function ImportPagina() {
       </header>
       <section className="bh-card bh-uitleg">
         <ol>
-          <li>Maak in Smartschool een export van de klassen <b>4OL, 4OS, 5OS en 6OS</b> met voornaam, naam, klas, gebruikersnaam en e-mailadres.</li>
-          <li>Bewaar ze als CSV-bestand, of open ze in Excel en kopieer de rijen (met de titelrij).</li>
-          <li>Kies hieronder het bestand of plak de rijen. Controleer welke kolom waarvoor dient en klik op <b>Importeren</b>.</li>
+          <li>In Smartschool: <b>Gebruikersbeheer</b>, kies links een klas (bv. 6OS1), tabblad <b>Lijsten</b>, rechts exporteren als <b>MS Excel</b>.</li>
+          <li>Open het bestand in Excel, selecteer alles (met de titelrij) en kopieer. Of bewaar het als CSV-bestand.</li>
+          <li>Plak de rijen hieronder of kies het bestand. Staat er geen kolom Klas in, kies dan de klas. Klik op <b>Importeren</b>.</li>
+          <li>Herhaal voor elke klas: 4OL1, 4OL2, 5OS1, 5OS2, 5OS3, 6OS1 en 6OS2.</li>
         </ol>
         <p className="sm">
           Bestaande leerlingen worden herkend aan de gebruikersnaam, anders aan het e-mailadres of aan naam en klas. Hun klas

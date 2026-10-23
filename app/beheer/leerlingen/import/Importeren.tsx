@@ -3,7 +3,8 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { leerlingenImporteren, type ImportRij } from "../../acties";
-import { leesTabel, raadKolommen } from "@/lib/tabel";
+import { leesTabel, norm, raadKolommen } from "@/lib/tabel";
+import { KLASSEN } from "@/lib/beheer";
 
 type Veld = "voornaam" | "naam" | "klas" | "smartschool_gebruikersnaam" | "email";
 
@@ -18,12 +19,16 @@ const VELDEN: { k: Veld; label: string; verplicht?: boolean; woorden: string[] }
 export default function Importeren({ schooljaar }: { schooljaar: string }) {
   const [tekst, setTekst] = useState("");
   const [kolom, setKolom] = useState<Record<Veld, number> | null>(null);
+  const [klasAlle, setKlasAlle] = useState("");
   const [bezig, start] = useTransition();
   const [uitslag, setUitslag] = useState<{ fout?: string; nieuw?: number; bijgewerkt?: number; ongewijzigd?: number } | null>(null);
 
   const tabel = useMemo(() => leesTabel(tekst), [tekst]);
   const kop = tabel[0] ?? [];
-  const data = tabel.slice(1);
+  // Export uit Smartschool: rijen met een andere basisrol dan "Leerling" (bv. leerkrachten) overslaan.
+  const rolKolom = kop.findIndex((h) => norm(h) === "basisrol");
+  const data = tabel.slice(1).filter((r) => rolKolom < 0 || !r[rolKolom] || norm(r[rolKolom]) === "leerling");
+  const overgeslagen = tabel.length - 1 - data.length;
   const map = kolom ?? (kop.length ? raadKolommen(kop, VELDEN) : null);
 
   const rijen: ImportRij[] = useMemo(() => {
@@ -32,13 +37,13 @@ export default function Importeren({ schooljaar }: { schooljaar: string }) {
     return data.map((r) => ({
       voornaam: get(r, "voornaam"),
       naam: get(r, "naam"),
-      klas: get(r, "klas"),
+      klas: get(r, "klas") || klasAlle,
       smartschool_gebruikersnaam: get(r, "smartschool_gebruikersnaam") || null,
       email: get(r, "email") || null,
     }));
-  }, [data, map]);
+  }, [data, map, klasAlle]);
   const geldig = rijen.filter((r) => r.voornaam && r.naam && r.klas);
-  const ontbreekt = map ? VELDEN.filter((v) => v.verplicht && map[v.k] < 0) : [];
+  const ontbreekt = map ? VELDEN.filter((v) => v.verplicht && map[v.k] < 0 && !(v.k === "klas" && klasAlle)) : [];
 
   async function bestand(f: File | undefined) {
     if (!f) return;
@@ -59,6 +64,13 @@ export default function Importeren({ schooljaar }: { schooljaar: string }) {
         <div className="bh-fg">
           <label className="f">CSV-bestand
             <input type="file" accept=".csv,.txt,text/csv,text/plain" onChange={(e) => bestand(e.target.files?.[0])} />
+          </label>
+          <label className="f">Klas voor rijen zonder klas
+            <select value={klasAlle} onChange={(e) => { setKlasAlle(e.target.value); setUitslag(null); }}>
+              <option value="">— kies een klas —</option>
+              {KLASSEN.map((k) => <option key={k}>{k}</option>)}
+            </select>
+            <small className="sm">Voor een export uit Smartschool zonder kolom Klas: importeer per klas en kies hier de klas.</small>
           </label>
           <label className="f full">Of plak de rijen uit Excel (met de titelrij)
             <textarea
@@ -89,6 +101,7 @@ export default function Importeren({ schooljaar }: { schooljaar: string }) {
             </div>
 
             <h3 className="bh-h3">Voorbeeld ({geldig.length} van {rijen.length} rijen bruikbaar)</h3>
+            {overgeslagen > 0 && <p className="sm">{overgeslagen} rij{overgeslagen === 1 ? "" : "en"} overgeslagen omdat de basisrol geen leerling is.</p>}
             <div className="bh-tw">
               <table className="bh-tabel">
                 <thead><tr>{VELDEN.map((v) => <th key={v.k}>{v.label}</th>)}</tr></thead>
@@ -109,7 +122,7 @@ export default function Importeren({ schooljaar }: { schooljaar: string }) {
           <button type="button" className="bh-btn pri" onClick={importeer} disabled={bezig || !geldig.length || ontbreekt.length > 0}>
             {bezig ? "Bezig met importeren…" : `Importeren (${geldig.length})`}
           </button>
-          {ontbreekt.length > 0 && <span className="bh-fout">Kies nog een kolom voor: {ontbreekt.map((v) => v.label.toLowerCase()).join(", ")}.</span>}
+          {ontbreekt.length > 0 && <span className="bh-fout">Kies nog een kolom voor: {ontbreekt.map((v) => v.label.toLowerCase()).join(", ")}{ontbreekt.some((v) => v.k === "klas") ? " (of kies hierboven een klas voor alle rijen)" : ""}.</span>}
           {uitslag?.fout && <span className="bh-fout" role="alert">{uitslag.fout}</span>}
           {uitslag && !uitslag.fout && (
             <span className="bh-ok" role="status">
