@@ -65,6 +65,7 @@ export default async function Leerlingen({ searchParams }: { searchParams: Promi
         </div>
         <div className="bh-acties">
           <Link href="/beheer/leerlingen/import" className="bh-btn">Klaslijst importeren</Link>
+          <Link href="/beheer/leerlingen/koppelen" className="bh-btn">Stageplaatsen koppelen</Link>
         </div>
       </header>
 

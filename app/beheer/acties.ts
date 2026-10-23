@@ -167,6 +167,80 @@ export async function leerlingenImporteren(
   return { nieuw: nieuw.length, bijgewerkt, ongewijzigd };
 }
 
+export type KoppelRij = {
+  leerling_id: string;
+  stageplaats_id: string;
+  mentor_naam: string;
+  mentor_telefoon: string;
+  mentor_email: string;
+  gsm: string;
+};
+
+/**
+ * Stageplaats en mentor per leerling in het dossier van één blokstage zetten (bv. uit een stagelijst).
+ * Enkel lege velden worden ingevuld. Heeft het dossier al een andere stageplaats, dan blijft die staan
+ * en wordt de rij als "anders" gemeld. Ook de gsm van de leerling wordt aangevuld als die nog leeg is.
+ */
+export async function dossiersKoppelen(
+  blokId: string,
+  rijen: KoppelRij[],
+): Promise<{ fout?: string; gekoppeld?: number; aangevuld?: number; ongewijzigd?: number; anders?: string[] }> {
+  if (!rijen.length) return { fout: "Er zijn geen leerlingen om te koppelen." };
+  if (rijen.length > 1000) return { fout: "Maximaal 1000 rijen per keer." };
+  const sb = await serverClient();
+
+  const ids = [...new Set(rijen.map((r) => r.leerling_id))];
+  const [bR, dR, lR, pR] = await Promise.all([
+    sb.from("blokken").select("id").eq("id", blokId).maybeSingle(),
+    sb.from("dossiers").select("*").eq("blok_id", blokId).in("leerling_id", ids),
+    sb.from("leerlingen").select("id, voornaam, naam, gsm").in("id", ids),
+    sb.from("stageplaatsen").select("id, naam"),
+  ]);
+  const leesFout = bR.error ?? dR.error ?? lR.error ?? pR.error;
+  if (leesFout) return { fout: vertaal(leesFout, "Lezen")?.fout };
+  if (!bR.data) return { fout: "Deze blokstage bestaat niet." };
+
+  const dossiers = new Map((dR.data ?? []).map((d) => [d.leerling_id as string, d]));
+  const leerlingen = new Map((lR.data ?? []).map((l) => [l.id as string, l]));
+  const plaatsen = new Map((pR.data ?? []).map((p) => [p.id as string, p.naam as string]));
+
+  let gekoppeld = 0, aangevuld = 0, ongewijzigd = 0;
+  const anders: string[] = [];
+  for (const r of rijen) {
+    const l = leerlingen.get(r.leerling_id);
+    if (!l || !plaatsen.has(r.stageplaats_id)) continue;
+    const d = dossiers.get(r.leerling_id);
+    const mentor = {
+      mentor_naam: r.mentor_naam.trim() || null,
+      mentor_telefoon: r.mentor_telefoon.trim() || null,
+      mentor_email: r.mentor_email.trim().toLowerCase() || null,
+    };
+
+    if (!d) {
+      const { error } = await sb.from("dossiers").insert({ leerling_id: r.leerling_id, blok_id: blokId, stageplaats_id: r.stageplaats_id, ...mentor });
+      if (error) return { fout: vertaal(error)?.fout };
+      gekoppeld++;
+    } else if (d.stageplaats_id && d.stageplaats_id !== r.stageplaats_id) {
+      anders.push(`${l.voornaam} ${l.naam}: staat al bij ${plaatsen.get(d.stageplaats_id) ?? "een andere stageplaats"}`);
+      continue;
+    } else {
+      const w: Record<string, string | null> = {};
+      if (!d.stageplaats_id) w.stageplaats_id = r.stageplaats_id;
+      for (const [k, v] of Object.entries(mentor)) if (v && !d[k]) w[k] = v;
+      if (Object.keys(w).length) {
+        const { error } = await sb.from("dossiers").update(w).eq("id", d.id);
+        if (error) return { fout: vertaal(error)?.fout };
+        if (w.stageplaats_id) gekoppeld++; else aangevuld++;
+      } else ongewijzigd++;
+    }
+    if (r.gsm.trim() && !l.gsm) {
+      await sb.from("leerlingen").update({ gsm: r.gsm.trim() }).eq("id", l.id);
+    }
+  }
+  revalidatePath("/beheer", "layout");
+  return { gekoppeld, aangevuld, ongewijzigd, anders };
+}
+
 // ---------------------------------------------------------------------------
 // Stageplaatsen
 // ---------------------------------------------------------------------------
