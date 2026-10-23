@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Ververst de inlogsessie van Supabase bij elke aanvraag naar het beheer,
+ * Ververst de inlogsessie van Supabase bij elke aanvraag naar het beheer en het portaal,
  * en stuurt wie niet ingelogd is naar het inlogscherm.
  */
 export async function proxy(request: NextRequest) {
@@ -28,15 +28,16 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user && request.nextUrl.pathname.startsWith("/beheer")) {
+  const pad = request.nextUrl.pathname;
+  if (!user && (pad.startsWith("/beheer") || pad.startsWith("/portaal"))) {
     const naar = request.nextUrl.clone();
     naar.pathname = "/inloggen";
-    naar.search = "?rol=school";
+    naar.search = pad.startsWith("/portaal") ? "?rol=stagiair" : "?rol=school";
     return NextResponse.redirect(naar);
   }
   return response;
 }
 
 export const config = {
-  matcher: ["/beheer/:path*", "/auth/:path*"],
+  matcher: ["/beheer/:path*", "/portaal/:path*", "/auth/:path*"],
 };

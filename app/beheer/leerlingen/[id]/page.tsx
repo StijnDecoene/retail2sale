@@ -73,6 +73,10 @@ export default async function LeerlingFiche({ params }: { params: Promise<{ id: 
                   <h2>{b.naam}</h2>
                   <span className="sm">{datumKort(b.start_datum)} – {datumKort(b.eind_datum)}</span>
                 </div>
+                <div className="bd bh-acties">
+                  {d && <Link className="bh-btn sm" href={`/beheer/dossiers/${d.id}`}>Top 3 en aanvraag</Link>}
+                  <Link className="bh-btn sm" href={`/portaal?leerling=${leerling.id}&blok=${b.id}`}>Bekijk als leerling</Link>
+                </div>
                 {!doetMee(b, leerling.klas) && (
                   <p className="bh-melding bd">Klas {leerling.klas} doet niet mee aan {b.naam} (zie Instellingen). Je kan hier toch gegevens invullen.</p>
                 )}

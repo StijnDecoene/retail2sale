@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { huidigeGebruiker, serverClient } from "@/lib/supabase/server";
-import { leegNaarNull, schooljaarVan, PLAATS_IMPORT_VELDEN, type PlaatsImportRij, type PlaatsImportVeld } from "@/lib/beheer";
+import { kboCijfers, leegNaarNull, plaatsSleutel, zoekPlaats, schooljaarVan, PLAATS_IMPORT_VELDEN, type PlaatsImportRij, type PlaatsImportVeld } from "@/lib/beheer";
 
 export type Resultaat = { ok?: string; fout?: string } | null;
 
@@ -304,9 +304,6 @@ export async function plaatsVerwijderen(fd: FormData) {
   redirect("/beheer/stageplaatsen");
 }
 
-const plaatsSleutel = (naam: string, gemeente: string | null) =>
-  `${naam} | ${gemeente ?? ""}`.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9|]+/g, " ").trim();
-const kboCijfers = (k: string | null) => (k ?? "").replace(/\D/g, "");
 
 /**
  * Stageplaatsen importeren (bv. uit een oud overzicht). Een gekende plaats wordt herkend aan het ondernemingsnummer,
@@ -485,3 +482,144 @@ export async function begeleiderActiefZetten(fd: FormData) {
   revalidatePath("/beheer/instellingen");
 }
 
+
+// ---------------------------------------------------------------------------
+// Stagedossiers: top 3 en aanvraag beoordelen
+// ---------------------------------------------------------------------------
+const nuIso = () => new Date().toISOString();
+
+async function ikBegeleider() {
+  const { begeleider } = await huidigeGebruiker();
+  return begeleider;
+}
+
+/** Top 3 goedkeuren (1 of 2 keuzes) of terugsturen met feedback. */
+export async function top3Beoordelen(_: Resultaat, fd: FormData): Promise<Resultaat> {
+  const dossierId = String(fd.get("dossier_id"));
+  const besluit = String(fd.get("besluit"));
+  const feedback = s(fd, "feedback");
+  const keuzes = fd.getAll("keuzes").map(Number).filter((n) => n >= 1 && n <= 3).sort();
+  const ik = await ikBegeleider();
+  if (!ik) return { fout: "Je hebt hiervoor geen rechten." };
+  const sb = await serverClient();
+  const { data: t } = await sb.from("top3").select("dossier_id, status").eq("dossier_id", dossierId).maybeSingle();
+  if (!t) return { fout: "Er is nog geen top 3 voor dit dossier." };
+
+  if (besluit === "goedkeuren") {
+    if (keuzes.length < 1 || keuzes.length > 2) return { fout: "Vink één of twee keuzes aan om goed te keuren." };
+    const { error } = await sb.from("beoordelingen").upsert({ dossier_id: dossierId, stap: "top3", status: "goedgekeurd", keuzes, feedback, op: nuIso(), door: ik.id });
+    if (error) return vertaal(error);
+    // Een concept dat de begeleider goedkeurt, telt als ingediend.
+    if (t.status !== "ingediend") await sb.from("top3").update({ status: "ingediend", ingediend_op: nuIso() }).eq("dossier_id", dossierId);
+  } else if (besluit === "aanpassen") {
+    if (!feedback) return { fout: "Schrijf erbij wat de leerling moet aanpassen." };
+    const { error } = await sb.from("beoordelingen").upsert({ dossier_id: dossierId, stap: "top3", status: "aanpassen", keuzes: [], feedback, op: nuIso(), door: ik.id });
+    if (error) return vertaal(error);
+    await sb.from("top3").update({ status: "concept" }).eq("dossier_id", dossierId);
+  } else return { fout: "Kies goedkeuren of aanpassen." };
+
+  revalidatePath("/beheer", "layout");
+  revalidatePath("/portaal");
+  return { ok: besluit === "goedkeuren" ? "Top 3 goedgekeurd. De leerling kan nu de aanvraag invullen." : "Teruggestuurd naar de leerling." };
+}
+
+/** Een beoordeling ongedaan maken (de stap staat dan weer op "wacht op goedkeuring"). */
+export async function beoordelingIntrekken(fd: FormData) {
+  const dossierId = String(fd.get("dossier_id"));
+  const stap = String(fd.get("stap"));
+  if (stap !== "top3" && stap !== "aanvraag") return;
+  const sb = await serverClient();
+  if (stap === "top3") {
+    const { data: ba } = await sb.from("beoordelingen").select("status").eq("dossier_id", dossierId).eq("stap", "aanvraag").maybeSingle();
+    if (ba?.status === "goedgekeurd") return; // eerst de aanvraag intrekken
+  }
+  await sb.from("beoordelingen").delete().eq("dossier_id", dossierId).eq("stap", stap);
+  revalidatePath("/beheer", "layout");
+  revalidatePath("/portaal");
+}
+
+/** Aanvraag goedkeuren (stageplaats opzoeken of aanmaken en in het dossier zetten) of terugsturen. */
+export async function aanvraagBeoordelen(_: Resultaat, fd: FormData): Promise<Resultaat> {
+  const dossierId = String(fd.get("dossier_id"));
+  const besluit = String(fd.get("besluit"));
+  const feedback = s(fd, "feedback");
+  const ik = await ikBegeleider();
+  if (!ik) return { fout: "Je hebt hiervoor geen rechten." };
+  const sb = await serverClient();
+  const [aR, dR] = await Promise.all([
+    sb.from("aanvragen").select("*").eq("dossier_id", dossierId).maybeSingle(),
+    sb.from("dossiers").select("*").eq("id", dossierId).maybeSingle(),
+  ]);
+  if (!aR.data || !dR.data) return { fout: "Er is nog geen aanvraag voor dit dossier." };
+
+  if (besluit === "aanpassen") {
+    if (!feedback) return { fout: "Schrijf erbij wat er aangepast moet worden." };
+    const { error } = await sb.from("beoordelingen").upsert({ dossier_id: dossierId, stap: "aanvraag", status: "aanpassen", keuzes: [], feedback, op: nuIso(), door: ik.id });
+    if (error) return vertaal(error);
+    await sb.from("aanvragen").update({ status: "concept" }).eq("dossier_id", dossierId);
+    revalidatePath("/beheer", "layout");
+    revalidatePath("/portaal");
+    return { ok: "Teruggestuurd naar de leerling." };
+  }
+  if (besluit !== "goedkeuren") return { fout: "Kies goedkeuren of aanpassen." };
+
+  const g = (aR.data.gegevens ?? {}) as import("@/lib/portaal").AanvraagGegevens;
+  const b = g.bedrijf ?? {}, m = g.mentor ?? {};
+  const naam = (b.naam ?? "").trim();
+  if (!naam) return { fout: "De aanvraag heeft geen naam voor de stageplaats." };
+  const leeg = (v?: string) => (v ?? "").trim() || null;
+  const gegevens: Record<string, string | null> = {
+    juridische_naam: leeg(b.juridisch), kbo: leeg(b.kbo),
+    sector: b.soort === "onthaal" ? "Onthaal / receptie" : "Retail / winkel",
+    straat: leeg(b.straat), postcode: leeg(b.postcode), gemeente: leeg(b.gemeente),
+    telefoon: leeg(b.tel), website: leeg(b.web), contactpersoon: leeg(m.naam), email: leeg(m.email)?.toLowerCase() ?? null,
+  };
+
+  // Bestaande stageplaats zoeken: eerst op ondernemingsnummer, dan op naam + gemeente.
+  const { data: alle, error: lf } = await sb.from("stageplaatsen").select("*");
+  if (lf) return vertaal(lf, "Lezen");
+  type P = Record<string, unknown> & { id: string; naam: string; gemeente: string | null; kbo: string | null };
+  let plaats = zoekPlaats((alle ?? []) as P[], naam, gegevens.gemeente, gegevens.kbo);
+  let nieuwePlaats = false;
+  if (plaats) {
+    const w: Record<string, string> = {};
+    for (const [veld, v] of Object.entries(gegevens)) {
+      const huidig = plaats[veld];
+      if (v && (huidig === null || huidig === undefined || String(huidig).trim() === "")) w[veld] = v;
+    }
+    if (Object.keys(w).length) {
+      const { error } = await sb.from("stageplaatsen").update(w).eq("id", plaats.id);
+      if (error) return vertaal(error);
+    }
+  } else {
+    const { data, error } = await sb.from("stageplaatsen").insert({ naam, ...gegevens, status: "actief" }).select("id, naam").single();
+    if (error) return vertaal(error);
+    plaats = data as P;
+    nieuwePlaats = true;
+  }
+
+  const anderePlaats = dR.data.stageplaats_id && dR.data.stageplaats_id !== plaats.id;
+  const { error: de } = await sb.from("dossiers").update({
+    stageplaats_id: plaats.id,
+    mentor_naam: leeg(m.naam) ?? dR.data.mentor_naam,
+    mentor_telefoon: leeg(m.tel) ?? dR.data.mentor_telefoon,
+    mentor_email: leeg(m.email)?.toLowerCase() ?? dR.data.mentor_email,
+  }).eq("id", dossierId);
+  if (de) return vertaal(de);
+
+  const gsm = leeg(g.stagiair?.gsm);
+  if (gsm) {
+    const { data: l } = await sb.from("leerlingen").select("gsm").eq("id", dR.data.leerling_id).maybeSingle();
+    if (l && !l.gsm) await sb.from("leerlingen").update({ gsm }).eq("id", dR.data.leerling_id);
+  }
+
+  const { error } = await sb.from("beoordelingen").upsert({ dossier_id: dossierId, stap: "aanvraag", status: "goedgekeurd", keuzes: [], feedback, op: nuIso(), door: ik.id });
+  if (error) return vertaal(error);
+  if (aR.data.status !== "ingediend") await sb.from("aanvragen").update({ status: "ingediend", ingediend_op: nuIso() }).eq("dossier_id", dossierId);
+
+  revalidatePath("/beheer", "layout");
+  revalidatePath("/portaal");
+  return {
+    ok: `Aanvraag goedgekeurd. ${nieuwePlaats ? `Nieuwe stageplaats "${plaats.naam}" aangemaakt` : `Gekoppeld aan de bestaande stageplaats "${plaats.naam}"`}${anderePlaats ? " (de vorige stageplaats in dit dossier is vervangen)" : ""}.`,
+  };
+}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { serverClient } from "@/lib/supabase/server";
+import { teBeoordelen } from "@/lib/dossiers-server";
 import { datumKort, doetMee, schooljaarVan, tijdstip, vandaagIso, type Blok, type Dossier, type Leerling, type Vraag } from "@/lib/beheer";
 
 export const metadata = { title: "Overzicht" };
@@ -10,11 +11,12 @@ export default async function Overzicht() {
   const sb = await serverClient();
   const sbPub = await serverClient("public");
 
-  const [blokkenR, leerlingenR, plaatsenR, vragenR] = await Promise.all([
+  const [blokkenR, leerlingenR, plaatsenR, vragenR, nakijken] = await Promise.all([
     sb.from("blokken").select("*").eq("schooljaar", sj).order("start_datum"),
     sb.from("leerlingen").select("id, klas, status").eq("schooljaar", sj),
     sb.from("stageplaatsen").select("id", { count: "exact", head: true }).eq("status", "actief"),
     sbPub.from("vragen").select("*").eq("status", "nieuw").order("aangemaakt_op", { ascending: false }).limit(5),
+    teBeoordelen(sb),
   ]);
 
   const blokken = (blokkenR.data ?? []) as Blok[];
@@ -103,6 +105,20 @@ export default async function Overzicht() {
                 <span className="pijl">→</span>
               </Link>
             )}
+            {nakijken.top3 > 0 && (
+              <Link href="/beheer/dossiers?filter=actie" className="bh-rij">
+                <span className="sev bad" />
+                <span className="t">Top 3 na te kijken<small>goedkeuren of laten aanpassen</small></span>
+                <span className="c">{nakijken.top3}</span>
+              </Link>
+            )}
+            {nakijken.aanvraag > 0 && (
+              <Link href="/beheer/dossiers?filter=actie" className="bh-rij">
+                <span className="sev bad" />
+                <span className="t">Aanvragen na te kijken<small>bij goedkeuren komt de stageplaats in het dossier</small></span>
+                <span className="c">{nakijken.aanvraag}</span>
+              </Link>
+            )}
             {inBlok.length - metPlaats > 0 && blok && (
               <Link href="/beheer/leerlingen?filter=zonder-plaats" className="bh-rij">
                 <span className="sev warn" />
@@ -127,7 +143,7 @@ export default async function Overzicht() {
                 <span className="pijl">→</span>
               </Link>
             ))}
-            {leerlingen.length > 0 && inBlok.length === metPlaats && inBlok.length === metBegeleider && vragen.length === 0 && (
+            {leerlingen.length > 0 && inBlok.length === metPlaats && inBlok.length === metBegeleider && vragen.length === 0 && nakijken.totaal === 0 && (
               <p className="bh-leeg">Niets dringends. Alles is in orde.</p>
             )}
           </div>
