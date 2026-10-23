@@ -81,7 +81,8 @@ const GROEPEN: Groep[] = [
     docs: [
       { soort: "file", titel: "Infobrochure stage 2026-2027", wie: "Iedereen", tekst: "De aanpak van de stage in Spes Nostra Heule.", href: "/docs/infobrochure-stage-2026-2027.pdf" },
       { soort: "file", titel: "Kalender 2026-2027", wie: "Iedereen", tekst: "Alle data voor stage, blokstage en verlofdagen.", status: "Binnenkort" },
-      { soort: "file", titel: "Handleiding stageportaal", wie: "Iedereen", tekst: "Inloggen en de verschillende onderdelen van het portaal.", status: "Binnenkort" },
+      { soort: "file", titel: "Handleiding voor stagegevers", wie: "Stagegever", tekst: "Bevestiging, digitaal contract, werkrooster, stagebezoek en evaluatie, stap voor stap.", href: "/handleiding/stagegever" },
+      { soort: "file", titel: "Handleiding voor stagiairs", wie: "Stagiair", tekst: "Top 3, aanvraag, contract en werkrooster, stap voor stap.", href: "/handleiding/stagiair" },
     ],
   },
 ];
