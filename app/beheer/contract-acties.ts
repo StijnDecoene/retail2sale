@@ -2,13 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { huidigeGebruiker, serverClient } from "@/lib/supabase/server";
-import { bezoeker, contractBeheer, contractKlaarzetten, tekstHash } from "@/lib/contract-server";
+import { bezoeker, contractBeheer, contractKlaarzetten, nieuweLink, tekstHash } from "@/lib/contract-server";
 import { contractPdf } from "@/lib/contract-pdf";
 import { afgerondMailen, uitnodiging } from "@/lib/contract-mails";
 import { siteAdres } from "@/lib/bevestiging-versturen";
 import { mailIngesteld, verstuurMail } from "@/lib/mail-server";
 import { mailFout, telFout, telMooi } from "@/lib/contactcheck";
-import { ROL_LABEL, magTekenen, type ContractGegevens, type Rol } from "@/lib/contract";
+import { ROL_LABEL, isMeerderjarig, magTekenen, type ContractGegevens, type Rol } from "@/lib/contract";
+import { leeftijdOp, type AanvraagGegevens } from "@/lib/portaal";
 import type { Resultaat } from "./acties";
 
 async function begeleider() {
@@ -147,4 +148,48 @@ export async function contractHandtekeningWissen(fd: FormData) {
   await sb.from("contracten").update({ afgerond_op: null }).eq("dossier_id", id);
   await sb.from("contract_log").insert({ dossier_id: id, wie: ik.naam, wat: `handtekening van ${ROL_LABEL[rol].toLowerCase()} gewist` });
   herlaad(id);
+}
+
+/**
+ * Leeftijd opnieuw bepalen uit de (verbeterde) geboortedatum in de aanvraag.
+ * Kan enkel zolang de stagiair en de ouder nog niet getekend hebben.
+ * Minderjarig geworden: een link voor de ouder wordt aangemaakt. Meerderjarig: de ouder vervalt.
+ */
+export async function contractLeeftijdHerbepalen(_: Resultaat, fd: FormData): Promise<Resultaat> {
+  const ik = await begeleider();
+  if (!ik) return { fout: "Je hebt hiervoor geen rechten." };
+  const id = String(fd.get("dossier_id"));
+  const sb = await serverClient();
+  const [{ data: c }, { data: d }, { data: a }, { data: ps }] = await Promise.all([
+    sb.from("contracten").select("meerderjarig").eq("dossier_id", id).maybeSingle(),
+    sb.from("dossiers").select("blok_id").eq("id", id).single(),
+    sb.from("aanvragen").select("gegevens").eq("dossier_id", id).maybeSingle(),
+    sb.from("contract_partijen").select("rol, getekend_op").eq("dossier_id", id),
+  ]);
+  if (!c || !d) return { fout: "Er is geen contract." };
+  const partijen = (ps ?? []) as { rol: Rol; getekend_op: string | null }[];
+  if (partijen.some((p) => (p.rol === "stagiair" || p.rol === "ouder") && p.getekend_op)) {
+    return { fout: "De stagiair of de ouder heeft al getekend. Wis eerst die handtekening(en) als de leeftijd echt fout was." };
+  }
+  const { data: b } = await sb.from("blokken").select("start_datum").eq("id", d.blok_id).single();
+  const geboorte = (a?.gegevens as AanvraagGegevens | undefined)?.stagiair?.geboortedatum;
+  const lft = leeftijdOp(geboorte, b!.start_datum);
+  if (lft === null) return { fout: "Er staat geen geldige geboortedatum in de aanvraag. Laat de aanvraag aanpassen." };
+  const meerderjarig = isMeerderjarig(geboorte, b!.start_datum);
+  if (meerderjarig === c.meerderjarig) return { ok: `Ongewijzigd: ${lft} jaar op de eerste stagedag (${meerderjarig ? "3" : "4"} handtekeningen).` };
+
+  const { error } = await sb.from("contracten").update({ meerderjarig }).eq("dossier_id", id);
+  if (error) return { fout: "Bewaren lukte niet." };
+  if (meerderjarig) {
+    await sb.from("contract_partijen").delete().eq("dossier_id", id).eq("rol", "ouder");
+  } else if (!partijen.some((p) => p.rol === "ouder")) {
+    await sb.from("contract_partijen").insert({ dossier_id: id, rol: "ouder", token: nieuweLink() });
+  }
+  const naGetekend = partijen.some((p) => p.getekend_op);
+  await sb.from("contract_log").insert({
+    dossier_id: id, wie: ik.naam,
+    wat: `leeftijd opnieuw bepaald: ${lft} jaar op de eerste stagedag, ${meerderjarig ? "meerderjarig (geen ouder meer)" : "minderjarig (ouder tekent mee)"}${naGetekend ? " na ondertekening" : ""}`,
+  });
+  herlaad(id);
+  return { ok: meerderjarig ? `Meerderjarig (${lft} jaar): de ouder hoeft niet meer te tekenen.` : `Minderjarig (${lft} jaar): er is een link voor de ouder aangemaakt.` };
 }
