@@ -118,7 +118,7 @@ export type Vraag = {
   notitie: string | null;
 };
 
-export const KLASSEN = ["4OL1", "4OL2", "4OS1", "4OS2", "5OS1", "5OS2", "5OS3", "6OS1", "6OS2"];
+export const KLASSEN = ["4OL1", "4OL2", "5OS1", "5OS2", "5OS3", "6OS1", "6OS2"];
 
 /** Schooljaar van een datum: van 1 september tot 31 augustus. */
 export function schooljaarVan(d = new Date()): string {
