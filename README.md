@@ -20,7 +20,7 @@ Het stageportaal zelf (top 3, aanvraag, contract, werkrooster …) volgt in fase
 
 ### 1. Supabase
 
-1. Maak in Supabase een nieuw project aan, regio **Central EU (Frankfurt)**.
+1. Gebruik het Supabase-project **SNH3** (regio eu-west-1, Ierland) van de organisatie Spes Nostra Heule. Een nieuw project kan ook, zolang de regio in de EU ligt.
 2. Open **SQL Editor**, plak de inhoud van `supabase/migrations/20261023000000_vragen.sql` en klik op **Run**.
 3. Ga naar **Project Settings → API** en noteer de **Project URL** en de **anon public** key.
 
