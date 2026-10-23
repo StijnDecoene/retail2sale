@@ -13,6 +13,8 @@ export type BevestigingData = {
   begeleider: { naam: string; telefoon: string | null; email: string } | null;
   /** Het team stagebegeleiding (voor de ondertekening). */
   team: { naam: string; telefoon: string | null; email: string }[];
+  /** Persoonlijke link van de stagegever naar het contract (als het contract al klaarstaat). */
+  contractLink?: string | null;
 };
 
 export const SCHOOL = {
@@ -120,12 +122,32 @@ export function onderwerp(b: BevestigingData) {
   return `Stage bevestigd: ${naamLeerling(b)} bij ${naamBedrijf(b)} (${datumKortZonderJaar(b.blok.start_datum)} – ${datumMid(b.blok.eind_datum)})`;
 }
 
-export function aanspreking(b: BevestigingData) {
+export type Voor = "stagegever" | "stagiair";
+
+export function aanspreking(b: BevestigingData, voor: Voor = "stagegever") {
+  if (voor === "stagiair") return `Dag ${b.leerling.voornaam}`;
   const m = b.aanvraag.mentor?.naam?.trim();
   return m ? `Beste ${m}` : "Beste stagegever";
 }
 
-export function teksten(b: BevestigingData) {
+export function teksten(b: BevestigingData, voor: Voor = "stagegever") {
+  if (voor === "stagiair") {
+    const t = tekstenStagegever(b);
+    return {
+      ...t,
+      intro: `Goed nieuws: je stage bij ${naamBedrijf(b)} ligt vast. De stagebegeleiding heeft je aanvraag goedgekeurd.`,
+      stappen: [
+        { t: "Stagecontract", x: "De stagegever vult eerst het contract aan en tekent. Daarna krijg je een link om zelf te tekenen; bij een minderjarige stagiair tekent ook een ouder of voogd." },
+        { t: "Werkrooster", x: `Leg samen met je stagementor vóór de eerste stagedag het werkrooster vast: ${b.blok.uren} uur in totaal, maximaal 8 uur per dag.` },
+        { t: "Praktische info", x: "In bijlage vind je de infobrochure en de stagekalender met de vakantie- en feestdagen." },
+      ],
+      vragen: `Heb je vragen? Mail naar ${SCHOOL.stagemail} of spreek een van de stagebegeleiders aan.`,
+    };
+  }
+  return tekstenStagegever(b);
+}
+
+function tekstenStagegever(b: BevestigingData) {
   const lln = naamLeerling(b);
   return {
     intro: `Goed nieuws: de stage van ${lln} (${b.leerling.klas}) bij ${naamBedrijf(b)} ligt vast. Hartelijk dank dat u een stagiair van Spes Nostra Heule die kans geeft.`,
@@ -138,7 +160,12 @@ export function teksten(b: BevestigingData) {
     ],
     toestemming: `Hierbij bevestigen wij dat ${lln} vanaf ${datumLang(b.blok.start_datum)} stage mag lopen bij ${naamBedrijf(b)}.`,
     stappen: [
-      { t: "Stagecontract", x: "Binnenkort ontvangt u een persoonlijke link om het stagecontract digitaal aan te vullen en te ondertekenen. Daarna tekenen de stagiair, een ouder (bij een minderjarige stagiair) en de school." },
+      {
+        t: "Stagecontract",
+        x: b.contractLink
+          ? "Vul het stagecontract aan en onderteken het digitaal via uw persoonlijke link in de begeleidende mail. Daarna tekenen de stagiair, een ouder (bij een minderjarige stagiair) en de school."
+          : "Binnenkort ontvangt u een persoonlijke link om het stagecontract digitaal aan te vullen en te ondertekenen. Daarna tekenen de stagiair, een ouder (bij een minderjarige stagiair) en de school.",
+      },
       { t: "Werkrooster", x: `Leg samen met ${b.leerling.voornaam} vóór de eerste stagedag het werkrooster vast: ${b.blok.uren} uur in totaal, maximaal 8 uur per dag.` },
       { t: "Praktische info", x: "In bijlage vindt u de infobrochure met de aanpak van de stage en de stagekalender met de vakantie- en feestdagen." },
     ],

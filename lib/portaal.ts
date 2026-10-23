@@ -142,17 +142,21 @@ export type StapStatus = { state: Toestand; code: string; label: string };
 export const STAPPEN = [
   { k: "top3", t: "Top 3", wie: "Stagiair" },
   { k: "aanvraag", t: "Aanvraag", wie: "Stagiair + stagegever" },
-  { k: "infomail", t: "Info-mail", wie: "Stagebegeleiding" },
+  { k: "infomail", t: "Bevestiging", wie: "Stagebegeleiding" },
   { k: "contract", t: "Contract", wie: "Alle partijen" },
   { k: "rooster", t: "Werkrooster", wie: "Stagegever + stagiair" },
 ] as const;
 export type StapKey = (typeof STAPPEN)[number]["k"];
+
+/** Stand van het contract zoals de leerling ze mag zien. */
+export type ContractStand = { meerderjarig: boolean; afgerond_op: string | null; getekend: string[] } | null;
 
 export function stapStatus(d: {
   stageplaats_id: string | null;
   top3: Top3Rij | null;
   aanvraag: AanvraagRij | null;
   beoordelingen: Beoordeling[];
+  contract?: ContractStand;
 }): Record<StapKey, StapStatus> {
   const b3 = d.beoordelingen.find((b) => b.stap === "top3");
   const ba = d.beoordelingen.find((b) => b.stap === "aanvraag");
@@ -174,8 +178,25 @@ export function stapStatus(d: {
   else if (ba?.status === "aanpassen") aanvraag = { state: "fix", code: "aanpassen", label: "Aanpassing gevraagd" };
   else aanvraag = { state: "action", code: "open", label: "Samen met de stagegever invullen" };
 
-  const later: StapStatus = { state: "locked", code: "later", label: aanvraag.state === "done" ? "Volgt binnenkort op dit platform" : "Opent na de aanvraag" };
-  return { top3, aanvraag, infomail: later, contract: later, rooster: later };
+  const klaar = aanvraag.state === "done";
+  const infomail: StapStatus = geregeld
+    ? { state: "done", code: "geregeld", label: "Al geregeld met de school" }
+    : klaar ? { state: "done", code: "bevestigd", label: "Stage bevestigd" } : { state: "locked", code: "slot", label: "Na goedkeuring van de aanvraag" };
+
+  let contract: StapStatus;
+  const c = d.contract;
+  const g = new Set(c?.getekend ?? []);
+  if (geregeld && !c) contract = { state: "done", code: "geregeld", label: "Al geregeld met de school" };
+  else if (!klaar) contract = { state: "locked", code: "slot", label: "Opent na de aanvraag" };
+  else if (!c) contract = { state: "wait", code: "klaarzetten", label: "Wordt klaargezet door de school" };
+  else if (c.afgerond_op) contract = { state: "done", code: "afgerond", label: "Door iedereen ondertekend" };
+  else if (!g.has("stagegever")) contract = { state: "wait", code: "stagegever", label: "Wacht op de stagegever" };
+  else if (!g.has("stagiair")) contract = { state: "action", code: "tekenen", label: "Onderteken je contract" };
+  else if (!c.meerderjarig && !g.has("ouder")) contract = { state: "action", code: "ouder", label: "Een ouder tekent nog" };
+  else contract = { state: "wait", code: "school", label: "Wacht op de school" };
+
+  const rooster: StapStatus = { state: "locked", code: "later", label: klaar ? "Volgt binnenkort op dit platform" : "Opent na de aanvraag" };
+  return { top3, aanvraag, infomail, contract, rooster };
 }
 
 /** Wat moet de school doen met dit dossier? (voor tellers en "Actie nodig") */

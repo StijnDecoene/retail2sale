@@ -11,11 +11,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const { begeleider } = await huidigeGebruiker();
   if (!begeleider) return new Response("Geen toegang", { status: 403 });
   const { id } = await params;
-  const b = await laadBevestiging(await serverClient(), id);
+  const b = await laadBevestiging(await serverClient(), id, req.nextUrl.origin);
   if (!b) return new Response("Er is nog geen aanvraag voor dit dossier.", { status: 404 });
 
   if (req.nextUrl.searchParams.get("soort") === "mail") {
-    const m = bevestigingMail(b, req.nextUrl.origin);
+    const m = bevestigingMail(b, req.nextUrl.origin, req.nextUrl.searchParams.get("voor") === "stagiair" ? "stagiair" : "stagegever");
     return new Response(m.html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
   }
   const pdf = await bevestigingPdf(b);

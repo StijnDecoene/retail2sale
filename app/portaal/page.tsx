@@ -184,9 +184,61 @@ export default async function Portaal({ searchParams }: { searchParams: Zoek }) 
         </section>
       )}
 
-      {["infomail", "contract", "rooster"].includes(stap) && (
+      {stap === "infomail" && (
         <section className="pt-paneel">
-          <div className="pt-paneel-kop"><h2>{STAPPEN.find((s) => s.k === stap)?.t}</h2></div>
+          <div className="pt-paneel-kop"><h2>Bevestiging</h2></div>
+          {status.infomail.state === "done" ? (
+            <div className="pt-feedback ok">
+              <b>{status.infomail.code === "geregeld" ? "Je stage is geregeld met de school" : "Je stage ligt vast"}</b>
+              {d.stageplaatsNaam && <p>Stageplaats: {d.stageplaatsNaam}</p>}
+              <small>De stagegever en jij kregen een bevestiging per mail, met de infobrochure en de stagekalender.</small>
+            </div>
+          ) : <p className="bh-melding">De bevestiging volgt zodra je aanvraag is goedgekeurd.</p>}
+          <p><a className="btn btn-line ct-klein" href="/docs/infobrochure-stage-2026-2027.pdf" target="_blank" rel="noreferrer">Infobrochure</a></p>
+        </section>
+      )}
+
+      {stap === "contract" && (
+        <section className="pt-paneel">
+          <div className="pt-paneel-kop">
+            <h2>Contract</h2>
+            <p>De stagegever tekent eerst. Daarna teken jij{d.contract?.meerderjarig ? "" : " en een ouder of voogd"}. De school tekent als laatste.</p>
+          </div>
+          {status.contract.code === "geregeld" ? (
+            <p className="bh-melding ok">Je contract is al geregeld met de school.</p>
+          ) : status.contract.state === "locked" ? (
+            <p className="bh-melding">Het contract opent zodra je aanvraag is goedgekeurd.</p>
+          ) : (
+            <>
+              <div className={`pt-feedback${status.contract.state === "done" ? " ok" : ""}`}>
+                <b>{status.contract.label}</b>
+                <small>
+                  {status.contract.code === "klaarzetten" && "De school zet het contract klaar met de gegevens uit je aanvraag."}
+                  {status.contract.code === "stagegever" && "De stagegever kreeg een persoonlijke link om het contract aan te vullen en te tekenen. Daarna is het jouw beurt."}
+                  {status.contract.code === "tekenen" && "Lees het contract, vul je adres in en teken met je vinger of muis. Een ouder of voogd kan meteen daarna op hetzelfde toestel tekenen."}
+                  {status.contract.code === "ouder" && "Laat een ouder of voogd tekenen via dezelfde knop."}
+                  {status.contract.code === "school" && "Iedereen heeft getekend. De school tekent als laatste; daarna krijg je het contract als pdf."}
+                  {status.contract.code === "afgerond" && "Het contract is volledig ondertekend."}
+                </small>
+              </div>
+              {d.contractLink && (
+                <p className="pt-knoppen">
+                  {["tekenen", "ouder"].includes(status.contract.code) ? (
+                    <a className="btn btn-blue" href={`/contract/${d.contractLink}`}>{status.contract.code === "ouder" ? "Ouder laten tekenen" : "Contract ondertekenen"}</a>
+                  ) : (
+                    <a className="btn btn-line" href={`/contract/${d.contractLink}`}>Contract bekijken</a>
+                  )}
+                  <a className="btn btn-line" href={`/contract/${d.contractLink}/pdf`} target="_blank" rel="noreferrer">Pdf</a>
+                </p>
+              )}
+            </>
+          )}
+        </section>
+      )}
+
+      {stap === "rooster" && (
+        <section className="pt-paneel">
+          <div className="pt-paneel-kop"><h2>Werkrooster</h2></div>
           <p className="bh-melding">Deze stap volgt binnenkort op dit platform.</p>
         </section>
       )}

@@ -2,7 +2,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { huidigeGebruiker, serverClient } from "@/lib/supabase/server";
 import { doetMee, schooljaarVan, vandaagIso, type Blok, type Leerling } from "@/lib/beheer";
-import { stapStatus, type AanvraagRij, type Beoordeling, type Profiel, type Top3Rij } from "@/lib/portaal";
+import { stapStatus, type AanvraagRij, type Beoordeling, type ContractStand, type Profiel, type Top3Rij } from "@/lib/portaal";
 
 export type PubliekePlaats = { naam: string; straat: string | null; postcode: string | null; gemeente: string | null; website: string | null; sector: string | null; bezet: boolean };
 
@@ -56,6 +56,26 @@ export async function laadDossier(sb: Awaited<ReturnType<typeof serverClient>>, 
     sb.rpc("publieke_stageplaatsen", { p_blok: blok.id }),
   ]);
   const dossier = dR.data as { id: string; stageplaats_id: string | null; mentor_naam: string | null };
+  // Contract: stand en de link van de stagiair (begeleider in voorbeeld: rechtstreeks; leerling: via eigen functies).
+  let contract: ContractStand = null;
+  let contractLink: string | null = null;
+  if (alsBegeleider) {
+    const [{ data: c }, { data: ps }] = await Promise.all([
+      sb.from("contracten").select("meerderjarig, afgerond_op").eq("dossier_id", dossierId).maybeSingle(),
+      sb.from("contract_partijen").select("rol, token, getekend_op").eq("dossier_id", dossierId),
+    ]);
+    if (c) {
+      contract = { meerderjarig: c.meerderjarig, afgerond_op: c.afgerond_op, getekend: (ps ?? []).filter((p) => p.getekend_op).map((p) => p.rol as string) };
+      contractLink = ((ps ?? []).find((p) => p.rol === "stagiair")?.token as string | undefined) ?? null;
+    }
+  } else {
+    const [{ data: c }, { data: t }] = await Promise.all([
+      sb.rpc("mijn_contract_status", { p_dossier: dossierId }),
+      sb.rpc("mijn_contract_link", { p_dossier: dossierId }),
+    ]);
+    contract = (c as ContractStand) ?? null;
+    contractLink = (t as string | null) ?? null;
+  }
   const top3 = (tR.data as Top3Rij | null) ?? null;
   const aanvraag = (aR.data as AanvraagRij | null) ?? null;
   const beoordelingen = (bR.data ?? []) as Beoordeling[];
@@ -73,7 +93,9 @@ export async function laadDossier(sb: Awaited<ReturnType<typeof serverClient>>, 
     beoordelingen,
     profiel: ((pR.data?.gegevens as Profiel | undefined) ?? {}) as Profiel,
     plaatsen: (plR.data ?? []) as PubliekePlaats[],
-    status: stapStatus({ stageplaats_id: dossier.stageplaats_id, top3, aanvraag, beoordelingen }),
+    status: stapStatus({ stageplaats_id: dossier.stageplaats_id, top3, aanvraag, beoordelingen, contract }),
     stageplaatsNaam,
+    contract,
+    contractLink,
   };
 }

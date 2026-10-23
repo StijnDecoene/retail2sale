@@ -8,7 +8,8 @@ import { laadBevestiging } from "@/lib/bevestiging-server";
 import { bevestigingMail } from "@/lib/bevestiging-mail";
 import { mailAfzender, mailIngesteld } from "@/lib/mail-server";
 import { siteAdres } from "@/lib/bevestiging-versturen";
-import { serverClient, type Begeleider } from "@/lib/supabase/server";
+import { huidigeGebruiker, serverClient, type Begeleider } from "@/lib/supabase/server";
+import ContractKaart from "@/components/contract/ContractKaart";
 import { datumKort, tijdstip, volledigeNaam, zoekPlaats, type Blok, type Dossier, type Leerling, type Stageplaats } from "@/lib/beheer";
 import { stapStatus, type AanvraagRij, type Beoordeling, type Profiel, type StapStatus, type Top3Rij } from "@/lib/portaal";
 
@@ -55,13 +56,15 @@ export default async function DossierPagina({ params }: { params: Promise<{ id: 
       : `Bij goedkeuren wordt "${bedrijf.naam}" als nieuwe stageplaats aangemaakt en aan het dossier gekoppeld.`;
 
   const mailAan = mailIngesteld();
-  const bevestiging = ba?.status === "goedgekeurd" ? await laadBevestiging(sb, id) : null;
-  const mail = bevestiging ? bevestigingMail(bevestiging, await siteAdres()) : null;
+  const site = await siteAdres();
+  const { begeleider: ik } = await huidigeGebruiker();
+  const bevestiging = ba?.status === "goedgekeurd" ? await laadBevestiging(sb, id, site) : null;
+  const mail = bevestiging ? bevestigingMail(bevestiging, site, "stagegever") : null;
+  const mailLln = bevestiging ? bevestigingMail(bevestiging, site, "stagiair") : null;
   const { data: mR } = bevestiging ? await sb.from("mails").select("*").eq("dossier_id", id).order("verstuurd_op", { ascending: false }) : { data: null };
   const mails = (mR ?? []) as { id: string; aan: string[]; verstuurd_op: string; fout: string | null; door: string | null }[];
-  const mailto = mail
-    ? `mailto:${mail.aan.join(",")}?cc=${encodeURIComponent(mail.cc.join(","))}&subject=${encodeURIComponent(mail.onderwerp)}&body=${encodeURIComponent(mail.tekst)}`
-    : "";
+  const maakMailto = (m: typeof mail) =>
+    m ? `mailto:${m.aan.join(",")}?${m.cc.length ? `cc=${encodeURIComponent(m.cc.join(","))}&` : ""}subject=${encodeURIComponent(m.onderwerp)}&body=${encodeURIComponent(m.tekst)}` : "";
 
   const beoordeeld = (b: Beoordeling) => (
     <p className="sm">
@@ -181,11 +184,13 @@ export default async function DossierPagina({ params }: { params: Promise<{ id: 
           </div>
           <div className="bd bh-stack">
             <p className="sm">
-              Aan: {mail.aan.join(", ") || "geen e-mailadres"} · cc {mail.cc.join(", ")} · van {mailAfzender()}
+              Stagegever: {mail.aan.join(", ") || "geen e-mailadres"} (cc {mail.cc.join(", ")}, met de persoonlijke contractlink)
+              <br />Stagiair: {mailLln?.aan.join(", ") || "geen e-mailadres"} (zonder contractlink) · van {mailAfzender()}
               <br />Onderwerp: {mail.onderwerp}
             </p>
             <div className="bh-acties">
-              <a className="bh-btn" href={`/beheer/dossiers/${id}/bevestiging?soort=mail`} target="_blank" rel="noreferrer">Mail bekijken</a>
+              <a className="bh-btn" href={`/beheer/dossiers/${id}/bevestiging?soort=mail`} target="_blank" rel="noreferrer">Mail stagegever bekijken</a>
+              <a className="bh-btn" href={`/beheer/dossiers/${id}/bevestiging?soort=mail&voor=stagiair`} target="_blank" rel="noreferrer">Mail stagiair bekijken</a>
               <a className="bh-btn" href={`/beheer/dossiers/${id}/bevestiging`} target="_blank" rel="noreferrer">Pdf bekijken</a>
               <a className="bh-btn" href={`/beheer/dossiers/${id}/bevestiging?download=1`}>Pdf downloaden</a>
               <a className="bh-btn" href="/docs/infobrochure-stage-2026-2027.pdf" target="_blank" rel="noreferrer">Infobrochure</a>
@@ -196,8 +201,9 @@ export default async function DossierPagina({ params }: { params: Promise<{ id: 
               </Formulier>
             ) : (
               <div className="bh-melding">
-                Mail versturen vanuit {mailAfzender()} is nog niet ingesteld. Tot dan: download de pdf, klik op{" "}
-                <a href={mailto}><b>Mail klaarzetten</b></a> en voeg de pdf en de infobrochure toe als bijlage.
+                Mail versturen vanuit {mailAfzender()} is nog niet ingesteld. Tot dan: download de pdf, zet de mails klaar en voeg de pdf en de infobrochure toe als bijlage:{" "}
+                <a href={maakMailto(mail)}><b>mail voor de stagegever</b></a>
+                {mailLln?.aan.length ? <> · <a href={maakMailto(mailLln)}><b>mail voor de stagiair</b></a></> : null}
               </div>
             )}
             {mails.length > 0 && (
@@ -213,6 +219,7 @@ export default async function DossierPagina({ params }: { params: Promise<{ id: 
           </div>
         </section>
       )}
+      {ba?.status === "goedgekeurd" && ik && <ContractKaart sb={sb} dossierId={id} ik={ik} site={site} />}
     </>
   );
 }
