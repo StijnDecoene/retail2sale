@@ -10,6 +10,7 @@ import { mailAfzender, mailIngesteld } from "@/lib/mail-server";
 import { siteAdres } from "@/lib/bevestiging-versturen";
 import { huidigeGebruiker, serverClient, type Begeleider } from "@/lib/supabase/server";
 import ContractKaart from "@/components/contract/ContractKaart";
+import { bezettingsChecker } from "@/lib/stageplaats-bezetting";
 import { datumKort, tijdstip, volledigeNaam, zoekPlaats, type Blok, type Dossier, type Leerling, type Stageplaats } from "@/lib/beheer";
 import { stapStatus, type AanvraagRij, type Beoordeling, type Profiel, type StapStatus, type Top3Rij } from "@/lib/portaal";
 
@@ -47,7 +48,11 @@ export default async function DossierPagina({ params }: { params: Promise<{ id: 
   const ba = beoordelingen.find((b) => b.stap === "aanvraag");
   const huidigePlaats = d.stageplaats_id ? plaatsen.find((p) => p.id === d.stageplaats_id) : undefined;
 
+  // Heeft een andere leerling in deze blokstage dezelfde winkel al (geplaatst, aanvraag of goedgekeurde top 3)?
+  const check = await bezettingsChecker(sb, blok.id, id);
+  const top3Meldingen = (top3?.keuzes ?? []).map((k) => check(k.winkel, k.gemeente));
   const bedrijf = aanvraag?.gegevens.bedrijf;
+  const aanvraagMeldingen = bedrijf ? check(bedrijf.naam, bedrijf.gemeente, bedrijf.kbo) : [];
   const match = bedrijf?.naam ? zoekPlaats(plaatsen, bedrijf.naam, bedrijf.gemeente ?? null, bedrijf.kbo ?? null) : undefined;
   const plaatsUitleg = !bedrijf?.naam
     ? undefined
@@ -102,7 +107,7 @@ export default async function DossierPagina({ params }: { params: Promise<{ id: 
           ) : (
             <div className="bd">
               {top3.ingediend_op && <p className="sm" style={{ marginBottom: 8 }}>Ingediend op {tijdstip(top3.ingediend_op)}{top3.status === "concept" ? " · nu weer in concept" : ""}</p>}
-              <Top3Samenvatting keuzes={top3.keuzes} goedgekeurd={b3?.status === "goedgekeurd" ? b3.keuzes : []} profiel={profiel} />
+              <Top3Samenvatting keuzes={top3.keuzes} goedgekeurd={b3?.status === "goedgekeurd" ? b3.keuzes : []} profiel={profiel} meldingen={top3Meldingen} />
             </div>
           )}
           {b3 && (
@@ -154,6 +159,10 @@ export default async function DossierPagina({ params }: { params: Promise<{ id: 
             </div>
           )}
           {aanvraag && ba?.status !== "goedgekeurd" && aanvraag.status === "ingediend" && (
+            <>
+            {aanvraagMeldingen.length > 0 && (
+              <div className="bh-melding bh-ct-waarschuwing"><b>Let op: deze winkel</b><ul>{aanvraagMeldingen.map((m) => <li key={m}>{m}</li>)}</ul></div>
+            )}
             <Beoordelen
               actie={aanvraagBeoordelen}
               dossierId={id}
@@ -169,6 +178,7 @@ export default async function DossierPagina({ params }: { params: Promise<{ id: 
                 </label>
               }
             />
+            </>
           )}
           {aanvraag && aanvraag.status === "concept" && ba?.status !== "goedgekeurd" && (
             <p className="bh-leeg">De leerling werkt nog aan de aanvraag (concept).</p>
