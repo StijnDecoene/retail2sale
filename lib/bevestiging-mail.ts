@@ -66,6 +66,7 @@ export function bevestigingMail(b0: BevestigingData, site: string, voor: Voor = 
       </table>
     </td></tr></table>
     <p style="margin:12px 0 0;font-size:13px;color:${grijs}">In bijlage: de bevestiging met alle gegevens en de stagekalender (pdf) en de infobrochure.</p>
+    <p style="margin:8px 0 0;font-size:14px;color:#3e4a5c">${voor === "stagiair" ? "Hoe het verder gaat, lees je in de" : "Hoe het verder gaat, leest u in de"} <a href="${site}/handleiding/${voor === "stagiair" ? "stagiair" : "stagegever"}" style="color:${blauw};font-weight:700">handleiding voor ${voor === "stagiair" ? "stagiairs" : "stagegevers"}</a>.</p>
   </td></tr>
   <tr><td style="padding:16px 28px 26px">
     <p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#3e4a5c">${esc(t.vragen)}</p>
@@ -86,6 +87,7 @@ export function bevestigingMail(b0: BevestigingData, site: string, voor: Voor = 
     `Stagebedrijf: ${naamBedrijf(b)}, ${adresBedrijf(b)}`,
     `Stagementor: ${[m.naam, m.functie].filter(Boolean).join(", ")}`,
     `Eerste stagedag: ${datumMid(b.blok.start_datum)}${b.aanvraag.werkvloer?.startuur ? ` om ${b.aanvraag.werkvloer.startuur}` : ""}`, "",
+    `Handleiding: ${site}/handleiding/${voor === "stagiair" ? "stagiair" : "stagegever"}`, "",
     t.vragen, "", "Met vriendelijke groeten,", ...b.team.map((g) => `${g.naam}${g.telefoon ? ` - ${g.telefoon}` : ""}`), "Stagebegeleiders Onthaal, organisatie en sales",
   ].join("\n");
 

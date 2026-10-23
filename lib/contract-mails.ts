@@ -66,7 +66,10 @@ export function uitnodiging(d: ContractData, rol: Rol, url: string, site: string
   const x = t[rol as Exclude<Rol, "directie">];
   return {
     onderwerp: x.onderwerp,
-    html: mailHtml(site, { eyebrow: `${d.blok.naam} · stagecontract`, titel: "Stagecontract ondertekenen", aanspreking: x.aan, alineas: x.alineas, knop: { tekst: "Contract openen", url } }),
+    html: mailHtml(site, {
+      eyebrow: `${d.blok.naam} · stagecontract`, titel: "Stagecontract ondertekenen", aanspreking: x.aan, alineas: x.alineas, knop: { tekst: "Contract openen", url },
+      na: [`Uitleg stap voor stap: ${site}/handleiding/${rol === "stagegever" ? "stagegever" : "stagiair"}`],
+    }),
   };
 }
 

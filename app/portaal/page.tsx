@@ -93,6 +93,7 @@ export default async function Portaal({ searchParams }: { searchParams: Zoek }) 
             Stage van {datumKort(blok.start_datum)} tot {datumKort(blok.eind_datum)}
             {blok.deadline_top3 && status.top3.state === "action" ? <> · top 3 indienen vóór <b>{datumKort(blok.deadline_top3)}</b></> : null}
           </p>
+          <p className="sub"><a className="bh-link" href="/handleiding/stagiair">Hoe werkt het? Lees de handleiding</a></p>
         </div>
         {mee.length > 1 && (
           <nav className="bh-seg" aria-label="Blokstage">

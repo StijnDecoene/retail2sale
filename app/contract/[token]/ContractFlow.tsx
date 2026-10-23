@@ -186,7 +186,7 @@ function Tekenen({ d, token, rol, terug, klaar }: { d: ContractData; token: stri
   const [relatie, setRelatie] = useState("moeder");
   const [adres, setAdres] = useState(adresSplits(g.stagiair_adres));
   const zetA = (k: keyof typeof adres, v: string) => setAdres((x) => ({ ...x, [k]: v }));
-  const [plaats, setPlaats] = useState("");
+  const [plaats, setPlaats] = useState(rol === "stagegever" ? d.aanvraag.bedrijf?.gemeente ?? "" : "");
   const [akkoord, setAkkoord] = useState(false);
   const [png, setPng] = useState("");
   const [res, setRes] = useState<ContractResultaat>(null);

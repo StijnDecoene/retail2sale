@@ -630,3 +630,44 @@ a.pt-stap:hover { border-color: var(--line-strong); color: var(--ink); }
 .ct-adres-rij2 { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 10px; }
 @media (max-width: 560px) { .ct-adres-rij1 { grid-template-columns: minmax(0, 1fr) 90px; } .ct-adres-rij1 > :last-child { grid-column: 1 / -1; } }
 .bh-ct-nog { display: block; margin-top: 2px; }
+
+/* =========================================================================
+   Handleidingen (/handleiding/stagegever, /handleiding/stagiair)
+   ========================================================================= */
+.hl { max-width: 860px; padding-block: 48px 88px; display: flex; flex-direction: column; gap: 28px; }
+.hl-kop { display: flex; flex-direction: column; gap: 12px; }
+.hl-kop h1 { font-size: clamp(30px, 5vw, 42px); letter-spacing: -0.02em; line-height: 1.1; }
+.hl-acties { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.hl-acties .btn { min-height: 42px; font-size: 14px; }
+.hl-kort { background: var(--blue-soft); border-radius: 16px; padding: 20px 24px; }
+.hl-kort h2 { font-size: 18px; margin-bottom: 8px; }
+.hl-kort ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 16px; line-height: 1.55; }
+.hl-stappen { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.hl-stap { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 16px; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; break-inside: avoid; }
+.hl-nr { width: 40px; height: 40px; border-radius: 50%; background: var(--blue); color: #fff; display: grid; place-items: center; font: 700 17px var(--f-display); }
+.hl-stap h2 { font-size: 20px; }
+.hl-wanneer { color: var(--blue); font-weight: 600; font-size: 14px; margin-top: 2px; }
+.hl-tekst p, .hl-stap li { font-size: 16px; line-height: 1.6; color: var(--ink-2); }
+.hl-tekst { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.hl-stap ul { margin: 8px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+.hl-tip { margin-top: 10px; background: #f3f5f8; border-radius: 10px; padding: 10px 12px; font-size: 14.5px; line-height: 1.5; color: var(--ink-2); }
+.hl-tip b { color: var(--blue); margin-right: 4px; }
+.hl-vragen { display: flex; flex-direction: column; gap: 8px; }
+.hl-vragen h2 { font-size: 24px; margin-bottom: 4px; }
+.hl-vragen details { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 0 18px; }
+.hl-vragen summary { cursor: pointer; padding: 14px 0; font-weight: 600; font-size: 16px; }
+.hl-vragen details > div { padding: 0 0 14px; font-size: 15.5px; line-height: 1.6; color: var(--ink-2); }
+.hl-contact { border-top: 1px solid var(--line); padding-top: 20px; }
+.hl-contact h2 { font-size: 20px; margin-bottom: 6px; }
+.hl-contact p { color: var(--ink-2); font-size: 16px; line-height: 1.6; }
+@media (max-width: 560px) { .hl-stap { grid-template-columns: 1fr; gap: 8px; padding: 16px; } .hl-nr { width: 34px; height: 34px; font-size: 15px; } }
+@media print {
+  header.kop, footer, .voet, .hl-acties, .menu { display: none !important; }
+  body { background: #fff; }
+  .hl { padding: 0; max-width: none; gap: 16px; }
+  .hl-stap { border-color: #ccc; }
+  .hl-vragen details { border: 0; padding: 0; }
+  .hl-vragen details > div { display: block; }
+}
+.ct-kop-rechts { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+@media (max-width: 860px) { .ct-kop-rechts { align-items: flex-start; } }
