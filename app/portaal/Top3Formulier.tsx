@@ -36,10 +36,11 @@ export default function Top3Formulier({
       if (j !== i) return x;
       const n = { ...x, [k]: v };
       if (k === "type") n.branche = "";
-      // Een gekende stageplaats gekozen? Dan het adres al invullen.
+      // Een gekende stageplaats gekozen? Dan het adres van die plaats invullen
+      // (ook als er al een adres stond, bv. van een eerder gekozen plaats).
       if (k === "winkel") {
         const p = plaatsen.find((p) => norm(p.naam) === norm(v));
-        if (p) Object.assign(n, { adres: x.adres || p.straat || "", postcode: x.postcode || p.postcode || "", gemeente: x.gemeente || p.gemeente || "", web: x.web || p.website || "" });
+        if (p) Object.assign(n, { adres: p.straat || "", postcode: p.postcode || "", gemeente: p.gemeente || "", web: p.website || "" });
       }
       return n;
     }));
