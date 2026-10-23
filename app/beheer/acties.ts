@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mailFout, telFout, telMooi } from "@/lib/contactcheck";
 import { redirect } from "next/navigation";
 import { huidigeGebruiker, serverClient } from "@/lib/supabase/server";
 import { kboCijfers, leegNaarNull, plaatsSleutel, zoekPlaats, schooljaarVan, PLAATS_IMPORT_VELDEN, type PlaatsImportRij, type PlaatsImportVeld } from "@/lib/beheer";
@@ -25,6 +26,16 @@ function vertaal(e: DbFout, wat = "Bewaren"): Resultaat {
 
 const s = (fd: FormData, k: string) => leegNaarNull(fd.get(k));
 
+/** Eerste foute telefoon of e-mail in een formulier, als melding. */
+function contactFout(velden: [string, string | null | undefined, "gsm" | "tel" | "mail"][]): Resultaat {
+  for (const [naam, waarde, soort] of velden) {
+    const f = soort === "mail" ? mailFout(waarde) : telFout(waarde, { gsm: soort === "gsm" });
+    if (f) return { fout: `${naam}: ${f}` };
+  }
+  return null;
+}
+const tel = (fd: FormData, k: string) => { const v = s(fd, k); return v ? telMooi(v) : null; };
+
 // ---------------------------------------------------------------------------
 // Leerlingen
 // ---------------------------------------------------------------------------
@@ -35,13 +46,15 @@ function leerlingVelden(fd: FormData) {
     klas: (s(fd, "klas") ?? "").toUpperCase(),
     smartschool_gebruikersnaam: s(fd, "smartschool_gebruikersnaam"),
     email: s(fd, "email")?.toLowerCase() ?? null,
-    gsm: s(fd, "gsm"),
+    gsm: tel(fd, "gsm"),
   };
 }
 
 export async function leerlingToevoegen(_: Resultaat, fd: FormData): Promise<Resultaat> {
   const v = leerlingVelden(fd);
   if (!v.voornaam || !v.naam || !v.klas) return { fout: "Vul voornaam, naam en klas in." };
+  const cf = contactFout([["E-mailadres", v.email, "mail"], ["Gsm", v.gsm, "gsm"]]);
+  if (cf) return cf;
   const sb = await serverClient();
   const { error } = await sb.from("leerlingen").insert({ ...v, schooljaar: s(fd, "schooljaar") ?? schooljaarVan() });
   if (error) return vertaal(error);
@@ -53,6 +66,8 @@ export async function leerlingBewaren(_: Resultaat, fd: FormData): Promise<Resul
   const id = String(fd.get("id"));
   const v = leerlingVelden(fd);
   if (!v.voornaam || !v.naam || !v.klas) return { fout: "Vul voornaam, naam en klas in." };
+  const cf = contactFout([["E-mailadres", v.email, "mail"], ["Gsm", v.gsm, "gsm"]]);
+  if (cf) return cf;
   const status = String(fd.get("status") ?? "actief");
   const sb = await serverClient();
   const { error } = await sb
@@ -85,9 +100,11 @@ export async function dossierBewaren(_: Resultaat, fd: FormData): Promise<Result
     stageplaats_id: s(fd, "stageplaats_id"),
     begeleider_id: s(fd, "begeleider_id"),
     mentor_naam: s(fd, "mentor_naam"),
-    mentor_telefoon: s(fd, "mentor_telefoon"),
+    mentor_telefoon: tel(fd, "mentor_telefoon"),
     mentor_email: s(fd, "mentor_email")?.toLowerCase() ?? null,
   };
+  const cf = contactFout([["Telefoon mentor", rij.mentor_telefoon, "tel"], ["E-mail mentor", rij.mentor_email, "mail"]]);
+  if (cf) return cf;
   const { error } = await sb.from("dossiers").upsert(rij, { onConflict: "leerling_id,blok_id" });
   if (error) return vertaal(error);
   revalidatePath("/beheer", "layout");
@@ -267,7 +284,7 @@ function plaatsVelden(fd: FormData) {
     straat: s(fd, "straat"),
     postcode: s(fd, "postcode"),
     gemeente: s(fd, "gemeente"),
-    telefoon: s(fd, "telefoon"),
+    telefoon: tel(fd, "telefoon"),
     email: s(fd, "email")?.toLowerCase() ?? null,
     website: s(fd, "website"),
     contactpersoon: s(fd, "contactpersoon"),
@@ -280,6 +297,8 @@ function plaatsVelden(fd: FormData) {
 export async function plaatsToevoegen(_: Resultaat, fd: FormData): Promise<Resultaat> {
   const v = plaatsVelden(fd);
   if (!v.naam) return { fout: "Vul de naam van de stageplaats in." };
+  const cf = contactFout([["Telefoon", v.telefoon, "tel"], ["E-mailadres", v.email, "mail"]]);
+  if (cf) return cf;
   const sb = await serverClient();
   const { data, error } = await sb.from("stageplaatsen").insert(v).select("id").single();
   if (error) return vertaal(error);
@@ -290,6 +309,8 @@ export async function plaatsToevoegen(_: Resultaat, fd: FormData): Promise<Resul
 export async function plaatsBewaren(_: Resultaat, fd: FormData): Promise<Resultaat> {
   const v = plaatsVelden(fd);
   if (!v.naam) return { fout: "Vul de naam van de stageplaats in." };
+  const cf = contactFout([["Telefoon", v.telefoon, "tel"], ["E-mailadres", v.email, "mail"]]);
+  if (cf) return cf;
   const sb = await serverClient();
   const { error } = await sb.from("stageplaatsen").update(v).eq("id", String(fd.get("id")));
   if (error) return vertaal(error);
@@ -469,10 +490,12 @@ export async function begeleiderToevoegen(_: Resultaat, fd: FormData): Promise<R
   const email = s(fd, "email")?.toLowerCase();
   const naam = s(fd, "naam");
   if (!email || !naam) return { fout: "Vul naam en e-mailadres in." };
+  const cf = contactFout([["E-mailadres", email, "mail"], ["Telefoon", s(fd, "telefoon"), "tel"]]);
+  if (cf) return cf;
   const sb = await serverClient();
   const { error } = await sb
     .from("begeleiders")
-    .insert({ email, naam, rol: String(fd.get("rol") ?? "begeleider"), telefoon: s(fd, "telefoon") });
+    .insert({ email, naam, rol: String(fd.get("rol") ?? "begeleider"), telefoon: tel(fd, "telefoon") });
   if (error) return vertaal(error);
   revalidatePath("/beheer/instellingen");
   return { ok: `${naam} kan nu inloggen met ${email}.` };

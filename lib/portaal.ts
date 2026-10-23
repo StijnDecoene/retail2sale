@@ -1,5 +1,6 @@
 // Leerlingportaal: gedeelde types, keuzelijsten, controles en de status per stap.
 // Wordt zowel door het portaal als door het beheer gebruikt (geen server-only code).
+import { mailFout, telFout } from "./contactcheck";
 
 export type Profiel = {
   gsm?: string;
@@ -93,17 +94,38 @@ export function leeftijdOp(geboortedatum: string | undefined, dagIso: string): n
   return a;
 }
 
+/** Velden met een telefoonnummer of e-mailadres in de aanvraag, en welke controle. */
+export const AANVRAAG_CONTACT: { k: string; soort: "gsm" | "tel" | "mail" }[] = [
+  { k: "stagiair.gsm", soort: "gsm" }, { k: "stagiair.nood_tel", soort: "tel" }, { k: "bedrijf.tel", soort: "tel" },
+  { k: "mentor.email", soort: "mail" }, { k: "mentor.tel", soort: "tel" },
+  { k: "verantwoordelijke.email", soort: "mail" }, { k: "verantwoordelijke.tel", soort: "tel" },
+];
+export function contactVeldFout(soort: "gsm" | "tel" | "mail", waarde: string | undefined): string | undefined {
+  return soort === "mail" ? mailFout(waarde) : telFout(waarde, { gsm: soort === "gsm" });
+}
+/** Foute telefoonnummers en e-mailadressen in de aanvraag. */
+export function contactFouten(g: AanvraagGegevens): Record<string, string> {
+  const f: Record<string, string> = {};
+  for (const { k, soort } of AANVRAAG_CONTACT) {
+    const [s, veld] = k.split(".");
+    if (s === "verantwoordelijke" && g.verantwoordelijke?.zelfde !== false) continue;
+    const fout = contactVeldFout(soort, ((g as Record<string, Record<string, string> | undefined>)[s] ?? {})[veld]);
+    if (fout) f[k] = fout;
+  }
+  return f;
+}
+
 export function aanvraagFouten(g: AanvraagGegevens, startBlok: string): Record<string, string> {
   const f: Record<string, string> = {};
   const req: [string, unknown][] = [
     ["bedrijf.naam", g.bedrijf?.naam], ["bedrijf.straat", g.bedrijf?.straat],
     ["bedrijf.postcode", g.bedrijf?.postcode], ["bedrijf.gemeente", g.bedrijf?.gemeente], ["bedrijf.soort", g.bedrijf?.soort],
     ["mentor.naam", g.mentor?.naam], ["mentor.email", g.mentor?.email],
-    ["stagiair.geboortedatum", g.stagiair?.geboortedatum], ["stagiair.nood_naam", g.stagiair?.nood_naam], ["stagiair.nood_tel", g.stagiair?.nood_tel],
+    ["stagiair.geboortedatum", g.stagiair?.geboortedatum], ["stagiair.gsm", g.stagiair?.gsm], ["stagiair.nood_naam", g.stagiair?.nood_naam], ["stagiair.nood_tel", g.stagiair?.nood_tel],
   ];
   if (g.verantwoordelijke?.zelfde === false) req.push(["verantwoordelijke.naam", g.verantwoordelijke?.naam]);
   req.forEach(([k, v]) => { if (leeg(v)) f[k] = "Vul dit in."; });
-  if (g.mentor?.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(g.mentor.email)) f["mentor.email"] = "Geen geldig e-mailadres.";
+  for (const [k, fout] of Object.entries(contactFouten(g))) f[k] = fout;
   if (g.bedrijf?.postcode && !/^\d{4}$/.test(g.bedrijf.postcode.trim())) f["bedrijf.postcode"] = "Vier cijfers.";
   const lft = leeftijdOp(g.stagiair?.geboortedatum, startBlok);
   if (g.stagiair?.geboortedatum && (lft === null || lft < 14 || lft > 25)) f["stagiair.geboortedatum"] = "Controleer de geboortedatum.";
