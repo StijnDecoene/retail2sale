@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { huidigeGebruiker, serverClient } from "@/lib/supabase/server";
-import { leegNaarNull, schooljaarVan } from "@/lib/beheer";
+import { leegNaarNull, schooljaarVan, PLAATS_IMPORT_VELDEN, type PlaatsImportRij, type PlaatsImportVeld } from "@/lib/beheer";
 
 export type Resultaat = { ok?: string; fout?: string } | null;
 
@@ -217,6 +217,95 @@ export async function plaatsVerwijderen(fd: FormData) {
   await sb.from("stageplaatsen").delete().eq("id", String(fd.get("id")));
   revalidatePath("/beheer", "layout");
   redirect("/beheer/stageplaatsen");
+}
+
+const plaatsSleutel = (naam: string, gemeente: string | null) =>
+  `${naam} | ${gemeente ?? ""}`.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9|]+/g, " ").trim();
+const kboCijfers = (k: string | null) => (k ?? "").replace(/\D/g, "");
+
+/**
+ * Stageplaatsen importeren (bv. uit een oud overzicht). Een gekende plaats wordt herkend aan het ondernemingsnummer,
+ * anders aan naam en gemeente. Bij een gekende plaats worden enkel lege velden aangevuld: niets wordt overschreven
+ * of verwijderd. Dubbele rijen in het bestand worden samengevoegd.
+ */
+export async function stageplaatsenImporteren(
+  rijen: PlaatsImportRij[],
+): Promise<{ fout?: string; nieuw?: number; aangevuld?: number; ongewijzigd?: number }> {
+  const schoon = rijen
+    .map((r) => {
+      const o = {} as Record<PlaatsImportVeld, string | null>;
+      for (const k of PLAATS_IMPORT_VELDEN) o[k] = String(r[k] ?? "").trim() || null;
+      if (o.email) o.email = o.email.toLowerCase();
+      return o;
+    })
+    .filter((r) => r.naam);
+  if (!schoon.length) return { fout: "Er staan geen rijen met een naam in de lijst." };
+  if (schoon.length > 2000) return { fout: "Maximaal 2000 stageplaatsen per import." };
+
+  const sb = await serverClient();
+  const { data: bestaand, error: leesFout } = await sb.from("stageplaatsen").select("*");
+  if (leesFout) return { fout: vertaal(leesFout, "Lezen")?.fout };
+
+  type Rij = Record<string, unknown> & { id?: string };
+  const opKbo = new Map<string, Rij>();
+  const opNaam = new Map<string, Rij>();
+  const zonderGemeente = new Map<string, Rij[]>();
+  const onthoud = (p: Rij) => {
+    const k = kboCijfers(p.kbo as string | null);
+    if (k.length >= 9) opKbo.set(k, p);
+    opNaam.set(plaatsSleutel(p.naam as string, p.gemeente as string | null), p);
+    const n = plaatsSleutel(p.naam as string, null);
+    zonderGemeente.set(n, [...(zonderGemeente.get(n) ?? []), p]);
+  };
+  (bestaand ?? []).forEach((p) => onthoud({ ...p }));
+
+  const nieuw: Rij[] = [];
+  const aanTeVullen = new Map<string, { origineel: Rij; wijziging: Rij }>();
+  let ongewijzigd = 0;
+
+  for (const r of schoon) {
+    const k = kboCijfers(r.kbo);
+    let p =
+      (k.length >= 9 && opKbo.get(k)) ||
+      opNaam.get(plaatsSleutel(r.naam!, r.gemeente)) ||
+      // Gemeente ontbreekt aan één kant: enkel op naam koppelen als die naam maar één keer voorkomt.
+      (() => {
+        const zelfde = zonderGemeente.get(plaatsSleutel(r.naam!, null)) ?? [];
+        return zelfde.length === 1 && (!r.gemeente || !zelfde[0].gemeente) ? zelfde[0] : undefined;
+      })();
+
+    if (!p) {
+      const rij: Rij = { ...r, status: "actief" };
+      nieuw.push(rij);
+      onthoud(rij); // volgende dubbele rijen in het bestand vullen deze aan
+      continue;
+    }
+    let veranderd = false;
+    for (const veld of PLAATS_IMPORT_VELDEN) {
+      if (veld === "naam" || !r[veld]) continue;
+      const huidig = p[veld];
+      if (huidig !== null && huidig !== undefined && String(huidig).trim() !== "") continue;
+      p[veld] = r[veld];
+      veranderd = true;
+      if (p.id) {
+        const a = aanTeVullen.get(p.id) ?? { origineel: p, wijziging: {} };
+        a.wijziging[veld] = r[veld];
+        aanTeVullen.set(p.id, a);
+      }
+    }
+    if (!veranderd && p.id && !aanTeVullen.has(p.id)) ongewijzigd++;
+  }
+
+  for (const [id, { wijziging }] of aanTeVullen) {
+    const { error } = await sb.from("stageplaatsen").update(wijziging).eq("id", id);
+    if (error) return { fout: vertaal(error)?.fout };
+  }
+  if (nieuw.length) {
+    const { error } = await sb.from("stageplaatsen").insert(nieuw);
+    if (error) return { fout: vertaal(error, "Importeren")?.fout };
+  }
+  revalidatePath("/beheer", "layout");
+  return { nieuw: nieuw.length, aangevuld: aanTeVullen.size, ongewijzigd };
 }
 
 // ---------------------------------------------------------------------------

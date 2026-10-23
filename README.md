@@ -13,7 +13,7 @@ Gebouwd met [Next.js](https://nextjs.org), gehost op [Vercel](https://vercel.com
 | `/documenten` | Documenten per stap van de stage, met filter per rol en zoeken |
 | `/privacy` | Voorlopige privacyverklaring (na te kijken door de school) |
 | Stel een vraag | Formulier in de kopbalk en onderaan elke pagina; bewaart de vraag in Supabase (tabel `vragen`) |
-| `/beheer` | Beheer voor begeleiders (inloggen via School): Overzicht, Leerlingen (met import van de klaslijst), Stageplaatsen, Vragen, Instellingen |
+| `/beheer` | Beheer voor begeleiders (inloggen via School): Overzicht, Leerlingen (met import van de klaslijst), Stageplaatsen (met import van een bestaande lijst), Vragen, Instellingen |
 
 Het leerlingportaal (top 3, aanvraag, contract, werkrooster …) en het inloggen voor stagiairs en stagegevers volgen in fase 1 van het technisch plan.
 

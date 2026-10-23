@@ -45,6 +45,9 @@ export default async function Stageplaatsen({ searchParams }: { searchParams: Pr
           <h1>Stageplaatsen</h1>
           <p className="sub">{alle.length} stageplaatsen over alle schooljaren{blok ? ` · bezetting in ${blok.naam}` : ""}</p>
         </div>
+        <div className="bh-acties">
+          <Link href="/beheer/stageplaatsen/import" className="bh-btn">Stageplaatsen importeren</Link>
+        </div>
       </header>
 
       <form className="bh-toolbar" method="get">
