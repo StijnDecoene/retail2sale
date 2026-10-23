@@ -5,7 +5,7 @@ import Link from "next/link";
 import { dossiersKoppelen, type KoppelRij } from "../../acties";
 import { leesTabel, norm, raadKolommen } from "@/lib/tabel";
 
-type Veld = "leerling" | "voornaam" | "achternaam" | "klas" | "stageplaats" | "gemeente" | "mentor" | "mentor_telefoon" | "mentor_email" | "gsm";
+type Veld = "leerling" | "voornaam" | "achternaam" | "klas" | "stageplaats" | "gemeente" | "mentor" | "mentor_telefoon" | "mentor_email" | "gsm" | "begeleider";
 
 const VELDEN: { k: Veld; label: string; woorden: string[] }[] = [
   { k: "leerling", label: "Leerling (volledige naam)", woorden: ["leerling", "stagiair", "volledige naam", "naam leerling", "name"] },
@@ -18,6 +18,7 @@ const VELDEN: { k: Veld; label: string; woorden: string[] }[] = [
   { k: "mentor_telefoon", label: "Telefoon mentor", woorden: ["telefoon mentor", "tel mentor", "telefoon", "contact phone"] },
   { k: "mentor_email", label: "E-mail mentor", woorden: ["e-mail mentor", "mail mentor", "contact email", "e-mail"] },
   { k: "gsm", label: "Gsm leerling", woorden: ["gsm leerling", "gsm", "student phone"] },
+  { k: "begeleider", label: "Begeleider", woorden: ["begeleider", "stagebegeleider", "begeleiding", "sup"] },
 ];
 
 const sl = (s: string) => norm(s).replace(/[^a-z0-9]+/g, " ").trim();
@@ -25,7 +26,7 @@ const sl = (s: string) => norm(s).replace(/[^a-z0-9]+/g, " ").trim();
 type L = { id: string; voornaam: string; naam: string; klas: string };
 type P = { id: string; naam: string; gemeente: string | null };
 
-export default function Koppelen({ leerlingen, plaatsen, blokken, standaardBlok }: { leerlingen: L[]; plaatsen: P[]; blokken: { id: string; naam: string }[]; standaardBlok: string }) {
+export default function Koppelen({ leerlingen, plaatsen, blokken, begeleiders, standaardBlok }: { leerlingen: L[]; plaatsen: P[]; blokken: { id: string; naam: string }[]; begeleiders: { id: string; naam: string }[]; standaardBlok: string }) {
   const [tekst, setTekst] = useState("");
   const [kolom, setKolom] = useState<Record<Veld, number> | null>(null);
   const [blok, setBlok] = useState(standaardBlok);
@@ -61,6 +62,16 @@ export default function Koppelen({ leerlingen, plaatsen, blokken, standaardBlok 
     return kand.length === 1 ? kand[0] : undefined;
   }, [leerlingen]);
 
+  /** Begeleider op volledige naam of op voornaam (als die uniek is). */
+  const zoekBegeleider = useMemo(() => (naam: string) => {
+    const n = sl(naam);
+    if (!n) return undefined;
+    const vol = begeleiders.find((g) => sl(g.naam) === n);
+    if (vol) return vol;
+    const op = begeleiders.filter((g) => sl(g.naam).split(" ")[0] === n);
+    return op.length === 1 ? op[0] : undefined;
+  }, [begeleiders]);
+
   const tabel = useMemo(() => leesTabel(tekst), [tekst]);
   const kop = tabel[0] ?? [];
   const map = kolom ?? (kop.length ? raadKolommen(kop, VELDEN) : null);
@@ -78,12 +89,14 @@ export default function Koppelen({ leerlingen, plaatsen, blokken, standaardBlok 
       const l = gekozen ?? exact ?? benaderd;
       const plaatsNaam = get(r, "stageplaats");
       const p = plaatsNaam ? zoekPlaats(plaatsNaam, get(r, "gemeente")) : undefined;
+      const begNaam = get(r, "begeleider");
+      const g = begNaam ? zoekBegeleider(begNaam) : undefined;
       return {
-        i, naam, klas, plaatsNaam, l, p, hoe: gekozen ? "gekozen" : exact ? "" : benaderd ? "benaderd" : "",
-        rij: l && p ? ({ leerling_id: l.id, stageplaats_id: p.id, mentor_naam: get(r, "mentor"), mentor_telefoon: get(r, "mentor_telefoon"), mentor_email: get(r, "mentor_email"), gsm: get(r, "gsm") } as KoppelRij) : null,
+        i, naam, klas, plaatsNaam, l, p, begNaam, g, hoe: gekozen ? "gekozen" : exact ? "" : benaderd ? "benaderd" : "",
+        rij: l && (p || g) ? ({ leerling_id: l.id, stageplaats_id: p?.id ?? "", begeleider_id: g?.id ?? "", mentor_naam: get(r, "mentor"), mentor_telefoon: get(r, "mentor_telefoon"), mentor_email: get(r, "mentor_email"), gsm: get(r, "gsm") } as KoppelRij) : null,
       };
     }).filter((x) => x.naam || x.plaatsNaam);
-  }, [tabel, map, opNaam, zoekPlaats, keuze, opId, benader]);
+  }, [tabel, map, opNaam, zoekPlaats, zoekBegeleider, keuze, opId, benader]);
   const klaar = rijen.filter((r) => r.rij).map((r) => r.rij!);
   const rang = (r: (typeof rijen)[number]) => (!r.rij ? 0 : r.hoe === "benaderd" ? 1 : 2);
   const naamKolom = map && (map.leerling >= 0 || (map.voornaam >= 0 && map.achternaam >= 0));
@@ -129,7 +142,7 @@ export default function Koppelen({ leerlingen, plaatsen, blokken, standaardBlok 
             <h3 className="bh-h3">Voorbeeld ({klaar.length} van {rijen.length} leerlingen klaar om te koppelen)</h3>
             <div className="bh-tw">
               <table className="bh-tabel">
-                <thead><tr><th>Leerling</th><th>Klas</th><th>Stageplaats</th><th>Gevonden?</th></tr></thead>
+                <thead><tr><th>Leerling</th><th>Klas</th><th>Stageplaats</th>{map.begeleider >= 0 && <th>Begeleider</th>}<th>Gevonden?</th></tr></thead>
                 <tbody>
                   {[...rijen].sort((a, b) => rang(a) - rang(b)).map((r) => (
                     <tr key={r.i} className={r.rij ? undefined : "ongeldig"}>
@@ -149,8 +162,12 @@ export default function Koppelen({ leerlingen, plaatsen, blokken, standaardBlok 
                       </td>
                       <td>{r.l?.klas ?? r.klas}</td>
                       <td>{r.p ? `${r.p.naam}${r.p.gemeente ? ` · ${r.p.gemeente}` : ""}` : r.plaatsNaam}</td>
+                      {map.begeleider >= 0 && <td>{r.g ? r.g.naam : r.begNaam ? <span className="pill bad">{r.begNaam}: niet gevonden</span> : <span className="sm">–</span>}</td>}
                       <td>
-                        {r.rij ? (r.hoe === "benaderd" ? <span className="pill warn">Klaar · naam nakijken</span> : <span className="pill ok">Klaar</span>) : (
+                        {r.rij ? (<>
+                          {r.hoe === "benaderd" ? <span className="pill warn">Klaar · naam nakijken</span> : <span className="pill ok">Klaar</span>}
+                          {r.plaatsNaam && !r.p && <> <span className="pill bad">Stageplaats niet gevonden</span></>}
+                        </>) : (
                           <>
                             {!r.l && <span className="pill bad">Leerling niet gevonden</span>}{" "}
                             {!r.plaatsNaam ? <span className="pill mut">Geen stageplaats</span> : !r.p && <span className="pill bad">Stageplaats niet gevonden</span>}
