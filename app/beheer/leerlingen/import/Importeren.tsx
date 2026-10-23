@@ -20,6 +20,7 @@ export default function Importeren({ schooljaar }: { schooljaar: string }) {
   const [tekst, setTekst] = useState("");
   const [kolom, setKolom] = useState<Record<Veld, number> | null>(null);
   const [klasAlle, setKlasAlle] = useState("");
+  const [laatsteKlas, setLaatsteKlas] = useState("");
   const [bezig, start] = useTransition();
   const [uitslag, setUitslag] = useState<{ fout?: string; nieuw?: number; bijgewerkt?: number; ongewijzigd?: number } | null>(null);
 
@@ -54,7 +55,15 @@ export default function Importeren({ schooljaar }: { schooljaar: string }) {
 
   function importeer() {
     setUitslag(null);
-    start(async () => setUitslag(await leerlingenImporteren(schooljaar, geldig)));
+    const klassen = [...new Set(geldig.map((r) => r.klas.toUpperCase()))].join(", ");
+    start(async () => {
+      const u = await leerlingenImporteren(schooljaar, geldig);
+      setUitslag(u);
+      if (!u.fout) {
+        // Klaar voor de volgende klas: vak leeg en de klas opnieuw laten kiezen.
+        setTekst(""); setKolom(null); setKlasAlle(""); setLaatsteKlas(klassen);
+      }
+    });
   }
 
   return (
@@ -126,8 +135,8 @@ export default function Importeren({ schooljaar }: { schooljaar: string }) {
           {uitslag?.fout && <span className="bh-fout" role="alert">{uitslag.fout}</span>}
           {uitslag && !uitslag.fout && (
             <span className="bh-ok" role="status">
-              Klaar: {uitslag.nieuw} nieuw, {uitslag.bijgewerkt} bijgewerkt, {uitslag.ongewijzigd} ongewijzigd.{" "}
-              <Link href="/beheer/leerlingen">Naar de leerlingen</Link>
+              Klaar{laatsteKlas ? ` (${laatsteKlas})` : ""}: {uitslag.nieuw} nieuw, {uitslag.bijgewerkt} bijgewerkt, {uitslag.ongewijzigd} ongewijzigd. Plak nu de volgende klas, of{" "}
+              <Link href="/beheer/leerlingen">ga naar de leerlingen</Link>
             </span>
           )}
         </div>
