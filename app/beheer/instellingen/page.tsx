@@ -1,7 +1,7 @@
 import Formulier, { ActieKnop } from "@/components/beheer/Formulier";
 import { begeleiderActiefZetten, begeleiderToevoegen, blokBewaren, uitzonderingToevoegen, uitzonderingVerwijderen } from "../acties";
 import { huidigeGebruiker, serverClient, type Begeleider } from "@/lib/supabase/server";
-import { UITZ_SOORT, datumKort, schooljaarVan, type Blok, type Uitzondering } from "@/lib/beheer";
+import { KLASSEN, UITZ_SOORT, datumKort, doetMee, schooljaarVan, type Blok, type Uitzondering } from "@/lib/beheer";
 
 export const metadata = { title: "Instellingen" };
 
@@ -13,11 +13,14 @@ export default async function Instellingen() {
   const { begeleider: ik } = await huidigeGebruiker();
   const magBeheren = ik?.rol === "beheerder" || ik?.rol === "directie";
 
-  const [gR, bR, uR] = await Promise.all([
+  const [gR, bR, uR, kR] = await Promise.all([
     sb.from("begeleiders").select("*").order("naam"),
     sb.from("blokken").select("*").eq("schooljaar", sj).order("start_datum"),
     sb.from("uitzonderingen").select("*").order("van"),
+    sb.from("leerlingen").select("klas").eq("schooljaar", sj),
   ]);
+  // Klassen: de vaste lijst plus klassen die in de klaslijst voorkomen.
+  const klassen = [...new Set([...KLASSEN, ...((kR.data ?? []) as { klas: string }[]).map((l) => l.klas)])].sort();
   const begeleiders = (gR.data ?? []) as Begeleider[];
   const blokken = (bR.data ?? []) as Blok[];
   const uitz = (uR.data ?? []) as Uitzondering[];
@@ -88,6 +91,18 @@ export default async function Instellingen() {
                 <label className="f">Laatste stagedag<input name="eind_datum" type="date" defaultValue={b.eind_datum} required /></label>
                 <label className="f">Totaal uren<input name="uren" type="number" min={1} defaultValue={b.uren} /></label>
                 <label className="f">Gemiddeld per week<input name="uren_per_week" type="number" min={1} defaultValue={b.uren_per_week} /></label>
+                <fieldset className="f full bh-klassen">
+                  <legend>Klassen die meedoen</legend>
+                  <div>
+                    {klassen.map((k) => (
+                      <label key={k}>
+                        <input type="hidden" name="klassen_aangeboden" value={k} />
+                        <input type="checkbox" name="klassen" value={k} defaultChecked={doetMee(b, k)} /> {k}
+                      </label>
+                    ))}
+                  </div>
+                  <small className="sm">Uitgevinkte klassen staan wel in de lijst Leerlingen, maar tellen niet mee in het overzicht en de filters van deze blokstage.</small>
+                </fieldset>
               </div>
             </Formulier>
 

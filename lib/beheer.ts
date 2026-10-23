@@ -79,7 +79,13 @@ export type Blok = {
   uren: number;
   uren_per_week: number;
   deadline_top3: string | null;
+  /** Klassen die aan deze blokstage deelnemen; null = alle klassen. */
+  klassen?: string[] | null;
 };
+
+/** Doet een leerling van deze klas mee aan de blokstage? */
+export const doetMee = (blok: Pick<Blok, "klassen"> | null | undefined, klas: string) =>
+  !blok?.klassen || blok.klassen.includes(klas);
 
 export type Uitzondering = { id: string; blok_id: string; van: string; tot: string; naam: string; soort: "vakantie" | "vm" | "geen" };
 

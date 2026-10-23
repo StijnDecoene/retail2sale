@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Formulier, { ActieKnop } from "@/components/beheer/Formulier";
 import { dossierBewaren, leerlingBewaren, leerlingVerwijderen } from "../../acties";
 import { serverClient, type Begeleider } from "@/lib/supabase/server";
-import { KLASSEN, LEERLING_STATUS, datumKort, volledigeNaam, type Blok, type Dossier, type Leerling } from "@/lib/beheer";
+import { KLASSEN, LEERLING_STATUS, datumKort, doetMee, volledigeNaam, type Blok, type Dossier, type Leerling } from "@/lib/beheer";
 
 export const metadata = { title: "Leerling" };
 
@@ -73,6 +73,9 @@ export default async function LeerlingFiche({ params }: { params: Promise<{ id: 
                   <h2>{b.naam}</h2>
                   <span className="sm">{datumKort(b.start_datum)} – {datumKort(b.eind_datum)}</span>
                 </div>
+                {!doetMee(b, leerling.klas) && (
+                  <p className="bh-melding bd">Klas {leerling.klas} doet niet mee aan {b.naam} (zie Instellingen). Je kan hier toch gegevens invullen.</p>
+                )}
                 <Formulier actie={dossierBewaren} knop="Bewaren">
                   <input type="hidden" name="leerling_id" value={leerling.id} />
                   <input type="hidden" name="blok_id" value={b.id} />

@@ -5,6 +5,7 @@ import { serverClient, type Begeleider } from "@/lib/supabase/server";
 import {
   KLASSEN,
   LEERLING_STATUS,
+  doetMee,
   schooljaarVan,
   vandaagIso,
   volledigeNaam,
@@ -47,8 +48,9 @@ export default async function Leerlingen({ searchParams }: { searchParams: Promi
     if (klas && l.klas !== klas) return false;
     if (zoek && !`${l.voornaam} ${l.naam} ${l.email ?? ""} ${l.smartschool_gebruikersnaam ?? ""}`.toLowerCase().includes(zoek)) return false;
     const d = dossiers.get(l.id);
-    if (filter === "zonder-plaats") return l.status === "actief" && !d?.stageplaats_id;
-    if (filter === "zonder-begeleider") return l.status === "actief" && !d?.begeleider_id;
+    if (filter === "zonder-plaats") return l.status === "actief" && doetMee(blok, l.klas) && !d?.stageplaats_id;
+    if (filter === "zonder-begeleider") return l.status === "actief" && doetMee(blok, l.klas) && !d?.begeleider_id;
+    if (filter === "geen-stage") return !doetMee(blok, l.klas);
     if (filter === "niet-actief") return l.status !== "actief";
     return true;
   });
@@ -79,6 +81,7 @@ export default async function Leerlingen({ searchParams }: { searchParams: Promi
           <option value="">Iedereen</option>
           <option value="zonder-plaats">Nog geen stageplaats</option>
           <option value="zonder-begeleider">Nog geen begeleider</option>
+          <option value="geen-stage">Geen stage in dit blok</option>
           <option value="niet-actief">Niet actief</option>
         </select>
         <button className="bh-btn" type="submit">Toon</button>
@@ -118,7 +121,7 @@ export default async function Leerlingen({ searchParams }: { searchParams: Promi
                     <td><Link prefetch={false} className="nm" href={`/beheer/leerlingen/${l.id}`}>{volledigeNaam(l)}</Link></td>
                     <td>{l.klas}</td>
                     <td><span className={`pill ${st.toon}`}>{st.label}</span></td>
-                    <td>{p ? <>{p.naam}{p.gemeente ? <small className="sm"> · {p.gemeente}</small> : null}</> : <span className="sm">–</span>}</td>
+                    <td>{p ? <>{p.naam}{p.gemeente ? <small className="sm"> · {p.gemeente}</small> : null}</> : !doetMee(blok, l.klas) ? <span className="pill mut">geen stage in dit blok</span> : <span className="sm">–</span>}</td>
                     <td>{g ? <span className="beg" style={{ background: g.kleur ?? "#1D5BAA" }}>{g.naam}</span> : <span className="sm">–</span>}</td>
                     <td className="sm">{l.email ?? l.gsm ?? ""}</td>
                   </tr>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { serverClient } from "@/lib/supabase/server";
-import { datumKort, schooljaarVan, tijdstip, vandaagIso, type Blok, type Dossier, type Leerling, type Vraag } from "@/lib/beheer";
+import { datumKort, doetMee, schooljaarVan, tijdstip, vandaagIso, type Blok, type Dossier, type Leerling, type Vraag } from "@/lib/beheer";
 
 export const metadata = { title: "Overzicht" };
 
@@ -33,7 +33,9 @@ export default async function Overzicht() {
     const { data } = await sb.from("dossiers").select("*").eq("blok_id", blok.id);
     dossiers = (data ?? []) as Dossier[];
   }
-  const actiefIds = new Set(actief.map((l) => l.id));
+  // Enkel leerlingen van klassen die aan deze blokstage meedoen, tellen voor stageplaats en begeleider.
+  const inBlok = actief.filter((l) => doetMee(blok, l.klas));
+  const actiefIds = new Set(inBlok.map((l) => l.id));
   const metPlaats = dossiers.filter((d) => d.stageplaats_id && actiefIds.has(d.leerling_id)).length;
   const metBegeleider = dossiers.filter((d) => d.begeleider_id && actiefIds.has(d.leerling_id)).length;
 
@@ -68,16 +70,17 @@ export default async function Overzicht() {
         <Link href="/beheer/leerlingen" className="bh-kpi">
           <span className="l">Actieve leerlingen</span>
           <span className="v">{actief.length}</span>
+          {blok && inBlok.length !== actief.length && <span className="sm">{inBlok.length} in {blok.naam}</span>}
         </Link>
         <Link href="/beheer/leerlingen" className="bh-kpi">
           <span className="l">Stageplaats gekend{blok ? ` · ${blok.naam}` : ""}</span>
-          <span className="v">{metPlaats} <small>/ {actief.length}</small></span>
-          <span className="meter"><i style={{ width: `${actief.length ? (metPlaats / actief.length) * 100 : 0}%` }} /></span>
+          <span className="v">{metPlaats} <small>/ {inBlok.length}</small></span>
+          <span className="meter"><i style={{ width: `${inBlok.length ? (metPlaats / inBlok.length) * 100 : 0}%` }} /></span>
         </Link>
         <Link href="/beheer/leerlingen" className="bh-kpi">
           <span className="l">Begeleider toegewezen</span>
-          <span className="v">{metBegeleider} <small>/ {actief.length}</small></span>
-          <span className="meter"><i style={{ width: `${actief.length ? (metBegeleider / actief.length) * 100 : 0}%` }} /></span>
+          <span className="v">{metBegeleider} <small>/ {inBlok.length}</small></span>
+          <span className="meter"><i style={{ width: `${inBlok.length ? (metBegeleider / inBlok.length) * 100 : 0}%` }} /></span>
         </Link>
         <Link href="/beheer/stageplaatsen" className="bh-kpi">
           <span className="l">Stageplaatsen die meewerken</span>
@@ -100,18 +103,18 @@ export default async function Overzicht() {
                 <span className="pijl">→</span>
               </Link>
             )}
-            {actief.length - metPlaats > 0 && blok && (
+            {inBlok.length - metPlaats > 0 && blok && (
               <Link href="/beheer/leerlingen?filter=zonder-plaats" className="bh-rij">
                 <span className="sev warn" />
                 <span className="t">Nog geen stageplaats<small>{blok.naam}</small></span>
-                <span className="c">{actief.length - metPlaats}</span>
+                <span className="c">{inBlok.length - metPlaats}</span>
               </Link>
             )}
-            {actief.length - metBegeleider > 0 && blok && (
+            {inBlok.length - metBegeleider > 0 && blok && (
               <Link href="/beheer/leerlingen?filter=zonder-begeleider" className="bh-rij">
                 <span className="sev in" />
                 <span className="t">Nog geen begeleider toegewezen<small>{blok.naam}</small></span>
-                <span className="c">{actief.length - metBegeleider}</span>
+                <span className="c">{inBlok.length - metBegeleider}</span>
               </Link>
             )}
             {vragen.map((v) => (
@@ -124,7 +127,7 @@ export default async function Overzicht() {
                 <span className="pijl">→</span>
               </Link>
             ))}
-            {leerlingen.length > 0 && actief.length === metPlaats && actief.length === metBegeleider && vragen.length === 0 && (
+            {leerlingen.length > 0 && inBlok.length === metPlaats && inBlok.length === metBegeleider && vragen.length === 0 && (
               <p className="bh-leeg">Niets dringends. Alles is in orde.</p>
             )}
           </div>
@@ -136,10 +139,10 @@ export default async function Overzicht() {
             <p className="bh-leeg">Nog geen leerlingen voor {sj}.</p>
           ) : (
             <table className="bh-tabel">
-              <thead><tr><th>Klas</th><th className="r">Actief</th></tr></thead>
+              <thead><tr><th>Klas</th><th className="r">Actief</th>{blok && <th>{blok.naam}</th>}</tr></thead>
               <tbody>
                 {[...perKlas.entries()].sort().map(([k, n]) => (
-                  <tr key={k}><td><Link prefetch={false} href={`/beheer/leerlingen?klas=${encodeURIComponent(k)}`}>{k}</Link></td><td className="r">{n}</td></tr>
+                  <tr key={k}><td><Link prefetch={false} href={`/beheer/leerlingen?klas=${encodeURIComponent(k)}`}>{k}</Link></td><td className="r">{n}</td>{blok && <td>{doetMee(blok, k) ? <span className="pill ok">doet mee</span> : <span className="pill mut">geen stage</span>}</td>}</tr>
                 ))}
               </tbody>
             </table>
@@ -148,7 +151,7 @@ export default async function Overzicht() {
           <table className="bh-tabel">
             <tbody>
               {blokken.map((b) => (
-                <tr key={b.id}><td><b>{b.naam}</b></td><td>{datumKort(b.start_datum)} – {datumKort(b.eind_datum)}</td><td className="r">{b.uren} u</td></tr>
+                <tr key={b.id}><td><b>{b.naam}</b>{b.klassen ? <><br /><small className="sm">{b.klassen.join(", ")}</small></> : null}</td><td>{datumKort(b.start_datum)} – {datumKort(b.eind_datum)}</td><td className="r">{b.uren} u</td></tr>
               ))}
             </tbody>
           </table>
