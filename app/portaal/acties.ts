@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { serverClient } from "@/lib/supabase/server";
+import { telMooi } from "@/lib/contactcheck";
 import { aanvraagFouten, top3Fouten, type AanvraagGegevens, type Keuze, type Profiel } from "@/lib/portaal";
 
 export type PortaalResultaat = { ok?: string; fout?: string; velden?: Record<string, string> } | null;
@@ -63,15 +64,15 @@ export async function top3Bewaren(
 function schoonAanvraag(g: AanvraagGegevens): AanvraagGegevens {
   const s = g.stagiair ?? {}, b = g.bedrijf ?? {}, m = g.mentor ?? {}, v = g.verantwoordelijke ?? {}, w = g.werkvloer ?? {}, a = g.akkoord ?? {};
   return {
-    stagiair: { geboortedatum: tekst(s.geboortedatum, 10), gsm: tekst(s.gsm, 40), nood_naam: tekst(s.nood_naam, 200), nood_tel: tekst(s.nood_tel, 40) },
+    stagiair: { geboortedatum: tekst(s.geboortedatum, 10), gsm: telMooi(tekst(s.gsm, 40)), nood_naam: tekst(s.nood_naam, 200), nood_tel: telMooi(tekst(s.nood_tel, 40)) },
     bedrijf: {
       naam: tekst(b.naam, 200), juridisch: tekst(b.juridisch, 200), kbo: tekst(b.kbo, 30), sector: tekst(b.sector, 100), straat: tekst(b.straat, 200),
-      postcode: tekst(b.postcode, 10), gemeente: tekst(b.gemeente, 100), tel: tekst(b.tel, 40), web: tekst(b.web, 300),
+      postcode: tekst(b.postcode, 10), gemeente: tekst(b.gemeente, 100), tel: telMooi(tekst(b.tel, 40)), web: tekst(b.web, 300),
       soort: b.soort === "onthaal" ? "onthaal" : b.soort === "sales" ? "sales" : "",
     },
-    mentor: { naam: tekst(m.naam, 200), functie: tekst(m.functie, 100), email: tekst(m.email, 200).toLowerCase(), tel: tekst(m.tel, 40) },
+    mentor: { naam: tekst(m.naam, 200), functie: tekst(m.functie, 100), email: tekst(m.email, 200).toLowerCase(), tel: telMooi(tekst(m.tel, 40)) },
     verantwoordelijke: v.zelfde === false
-      ? { zelfde: false, naam: tekst(v.naam, 200), functie: tekst(v.functie, 100), email: tekst(v.email, 200).toLowerCase(), tel: tekst(v.tel, 40) }
+      ? { zelfde: false, naam: tekst(v.naam, 200), functie: tekst(v.functie, 100), email: tekst(v.email, 200).toLowerCase(), tel: telMooi(tekst(v.tel, 40)) }
       : { zelfde: true },
     werkvloer: { taken: tekst(w.taken, 2000), kledij: (w.kledij ?? []).map((x) => tekst(x, 30)).slice(0, 10), startuur: tekst(w.startuur, 5), melden: tekst(w.melden, 200) },
     akkoord: { uren: !!a.uren, maandag: !!a.maandag, familie: !!a.familie },

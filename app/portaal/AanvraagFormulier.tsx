@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { KLEDIJ, aanvraagVoorinvullen, type AanvraagGegevens, type Keuze, type Profiel } from "@/lib/portaal";
+import { telMooi } from "@/lib/contactcheck";
+import { AANVRAAG_CONTACT, KLEDIJ, aanvraagVoorinvullen, contactVeldFout, type AanvraagGegevens, type Keuze, type Profiel } from "@/lib/portaal";
 import { aanvraagBewaren, type PortaalResultaat } from "./acties";
 import { Datumkeuze, Veld, Vink, Voet } from "./Velden";
 
@@ -52,17 +53,37 @@ export default function AanvraagFormulier({
     if (indienen && !window.confirm("De aanvraag indienen? Kijk eerst samen met je stagementor of alles klopt.")) return;
     start(async () => {
       const r = await aanvraagBewaren(dossierId, nr, g, startBlok, indienen);
+      setVerlaten({});
       setRes(r);
       if (r?.ok) router.refresh();
       else if (r?.velden) document.querySelector(".pt-fout")?.scrollIntoView({ behavior: "smooth", block: "center" });
     });
   }
 
-  const tekst = (s: Sectie, k: string, label: string, opt: { type?: string; full?: boolean; hint?: string } = {}) => (
-    <Veld label={label} fout={f[`${s}.${k}`]} full={opt.full} hint={opt.hint}>
-      <input type={opt.type ?? "text"} value={v(s, k)} onChange={(e) => zet(s, k, e.target.value)} />
-    </Veld>
-  );
+  // Telefoon en e-mail: meteen controleren zodra je het veld verlaat.
+  const [verlaten, setVerlaten] = useState<Record<string, boolean>>({});
+  const tekst = (s: Sectie, k: string, label: string, opt: { type?: string; full?: boolean; hint?: string } = {}) => {
+    const sleutel = `${s}.${k}`;
+    const contact = AANVRAAG_CONTACT.find((c) => c.k === sleutel);
+    const direct = contact && verlaten[sleutel] ? contactVeldFout(contact.soort, v(s, k)) : undefined;
+    return (
+      <Veld label={label} fout={direct ?? (contact && verlaten[sleutel] ? undefined : f[sleutel])} full={opt.full} hint={opt.hint}>
+        <input
+          type={opt.type ?? "text"}
+          inputMode={contact && contact.soort !== "mail" ? "tel" : contact ? "email" : undefined}
+          autoComplete="off"
+          value={v(s, k)}
+          onChange={(e) => zet(s, k, e.target.value)}
+          onBlur={() => {
+            if (!contact) return;
+            setVerlaten((x) => ({ ...x, [sleutel]: true }));
+            if (contact.soort === "mail") zet(s, k, v(s, k).trim().toLowerCase());
+            else if (!contactVeldFout(contact.soort, v(s, k))) zet(s, k, telMooi(v(s, k)));
+          }}
+        />
+      </Veld>
+    );
+  };
   const kledij = g.werkvloer?.kledij ?? [];
   const zelfde = g.verantwoordelijke?.zelfde !== false;
 
@@ -167,7 +188,7 @@ export default function AanvraagFormulier({
             vanJaar={Number(startBlok.slice(0, 4)) - 25}
             totJaar={Number(startBlok.slice(0, 4)) - 14}
           />
-          {tekst("stagiair", "gsm", "Je gsm-nummer", { type: "tel" })}
+          {tekst("stagiair", "gsm", "Je gsm-nummer", { type: "tel", hint: "Bv. 0470 12 34 56" })}
           {tekst("stagiair", "nood_naam", "Te verwittigen bij nood: naam *")}
           {tekst("stagiair", "nood_tel", "Te verwittigen bij nood: telefoon *", { type: "tel" })}
         </div>
