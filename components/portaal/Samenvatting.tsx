@@ -1,7 +1,7 @@
 import { KLEDIJ, type AanvraagGegevens, type Keuze, type Profiel } from "@/lib/portaal";
 
 /** Alleen-lezen weergave van een top 3 (portaal en beheer). */
-export function Top3Samenvatting({ keuzes, goedgekeurd = [], profiel }: { keuzes: Keuze[]; goedgekeurd?: number[]; profiel?: Profiel }) {
+export function Top3Samenvatting({ keuzes, goedgekeurd = [], profiel, meldingen }: { keuzes: Keuze[]; goedgekeurd?: number[]; profiel?: Profiel; meldingen?: string[][] }) {
   return (
     <div className="pt-sam">
       {keuzes.map((k, i) => (
@@ -15,6 +15,9 @@ export function Top3Samenvatting({ keuzes, goedgekeurd = [], profiel }: { keuzes
             {k.type && <span className={`pill ${k.type === "sales" ? "in" : "mut"}`}>{k.type === "sales" ? "Sales" : "Onthaal"}</span>}
             {goedgekeurd.includes(i + 1) && <span className="pill ok">Goedgekeurd</span>}
           </header>
+          {meldingen?.[i]?.length ? (
+            <ul className="pt-waarschuwing">{meldingen[i].map((m) => <li key={m}>{m}</li>)}</ul>
+          ) : null}
           <dl className="bh-meta">
             {k.branche && <><dt>Soort zaak</dt><dd>{k.branche}</dd></>}
             {k.web && <><dt>Website</dt><dd>{k.web}</dd></>}
