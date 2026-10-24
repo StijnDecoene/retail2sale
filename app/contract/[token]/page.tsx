@@ -4,13 +4,17 @@ import { serverClient } from "@/lib/supabase/server";
 import { contractViaLink } from "@/lib/contract-server";
 import { ROL_LABEL, contractStatus, contractTekst, datumMidden, effectief } from "@/lib/contract";
 import ContractFlow from "./ContractFlow";
+import Documenten from "@/components/contract/Documenten";
+import { documentenLijst } from "@/lib/documenten-server";
 
 export const metadata: Metadata = { title: "Stagecontract", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 export default async function ContractPagina({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const d = await contractViaLink(await serverClient(), token);
+  const sb = await serverClient();
+  const d = await contractViaLink(sb, token);
+  const docs = d?.rol === "stagegever" ? await documentenLijst(sb, { token }) : null;
   return (
     <div className="pt">
       <header className="pt-balk">
@@ -45,6 +49,14 @@ export default async function ContractPagina({ params }: { params: Promise<{ tok
               </div>
             </header>
             <ContractFlow d={d} token={token} secties={contractTekst(d)} status={contractStatus(d)} />
+            {docs && (
+              <section className="bh-card" id="risico">
+                <div className="hd"><h2>Risicoanalyse of werkpostfiche</h2><span className="sm">Artikel 6 · vóór de eerste stagedag</span></div>
+                <div className="bd">
+                  <Documenten modus="stagegever" token={token} docs={docs} risico={effectief(d).risico} naamStart={effectief(d).ondertekenaar} />
+                </div>
+              </section>
+            )}
           </>
         )}
       </main>

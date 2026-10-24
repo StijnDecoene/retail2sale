@@ -127,6 +127,20 @@ export default async function Overzicht() {
                 <span className="c">{nakijken.contract}</span>
               </Link>
             )}
+            {nakijken.documenten > 0 && (
+              <Link href="/beheer/dossiers?filter=risico" className="bh-rij">
+                <span className="sev bad" />
+                <span className="t">Risicoanalyses na te kijken<small>opgeladen door de stagegever</small></span>
+                <span className="c">{nakijken.documenten}</span>
+              </Link>
+            )}
+            {nakijken.risicoOntbreekt > 0 && (
+              <Link href="/beheer/dossiers?filter=risico" className="bh-rij">
+                <span className="sev warn" />
+                <span className="t">Risicoanalyse ontbreekt<small>de stage start binnen 14 dagen of loopt al</small></span>
+                <span className="c">{nakijken.risicoOntbreekt}</span>
+              </Link>
+            )}
             {nakijken.afwezig > 0 && (
               <Link href="/beheer/afwezigheden" className="bh-rij">
                 <span className="sev bad" />
@@ -158,7 +172,7 @@ export default async function Overzicht() {
                 <span className="pijl">→</span>
               </Link>
             ))}
-            {leerlingen.length > 0 && inBlok.length === metPlaats && vragen.length === 0 && nakijken.totaal === 0 && nakijken.afwezig === 0 && nakijken.losInhaal === 0 && (
+            {leerlingen.length > 0 && inBlok.length === metPlaats && vragen.length === 0 && nakijken.totaal === 0 && nakijken.afwezig === 0 && nakijken.losInhaal === 0 && nakijken.risicoOntbreekt === 0 && (
               <p className="bh-leeg">Niets dringends. Alles is in orde.</p>
             )}
           </div>

@@ -347,7 +347,7 @@ p { margin: 0; }
 .bh-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .bh-link { font-weight: 600; font-size: 13px; text-decoration: none; }
 
-.bh-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 10px; }
+.bh-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
 .bh-kpi { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; text-decoration: none; color: var(--ink); display: flex; flex-direction: column; gap: 2px; box-shadow: 0 1px 2px rgba(14, 26, 43, 0.06); }
 .bh-kpi:hover { border-color: var(--blue); color: var(--ink); }
 .bh-kpi .l { font-size: 12px; color: var(--muted); font-weight: 600; }
@@ -1037,3 +1037,19 @@ button.bh-kpi { font: inherit; text-align: left; cursor: pointer; color: inherit
 .act-pijlen { white-space: nowrap; }
 .act-pijlen button { border: 0; background: transparent; cursor: pointer; color: #5a6578; padding: 0 3px; }
 .act-bewaar { position: sticky; bottom: 0; z-index: 5; }
+
+/* Documenten (risicoanalyse) */
+.doc { display: grid; gap: 12px; }
+.doc-lijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.doc-lijst li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #e3e7ee; border-radius: 10px; background: #fff; flex-wrap: wrap; }
+.doc-ic { width: 38px; height: 38px; border-radius: 8px; background: #eaf1fb; color: #1d5baa; font-size: 10px; font-weight: 800; display: grid; place-items: center; flex: none; }
+.doc-t { flex: 1; min-width: 200px; display: flex; flex-direction: column; }
+.doc-t a { font-weight: 600; color: #1d5baa; word-break: break-word; }
+.doc-t small { color: #5a6578; font-size: 12px; }
+.doc-weg { border: 0; background: transparent; font-size: 20px; line-height: 1; color: #a11a27; cursor: pointer; padding: 0 4px; }
+.doc-op { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; padding: 12px; border: 1px dashed #b9cde9; border-radius: 12px; background: #f8fbff; }
+.doc-op .f { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: #3e4a5c; }
+.doc-op .doc-bestand { flex: 1; min-width: 220px; }
+.doc-op input[type="file"] { font-size: 13px; }
+.doc-school { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 12px; border-radius: 10px; background: #fff8e8; border: 1px solid #f1d9a6; font-size: 14px; }
+.doc-school a { font-weight: 600; color: #1d5baa; }

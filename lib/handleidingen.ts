@@ -69,7 +69,7 @@ export const HANDLEIDINGEN: Record<Wie, HandleidingInhoud> = {
           "**Stageplaats**: naam, adres van de zetel, telefoon, e-mail en ondernemingsnummer.",
           "**Paritair comité** en **RSZ-kengetal**: vraag ze na bij uw boekhouder of sociaal secretariaat als u ze niet kent. Ze zijn niet verplicht.",
           "**Mentor** op de werkvloer, met gsm-nummer. De naam is verplicht.",
-          "**Risicoanalyse**: duid aan of u een risicoanalyse of werkpostfiche hebt (die bezorgt u vóór de start), of dat u geen werknemers hebt (dan stuurt de school u een werkpostfiche).",
+          "**Risicoanalyse**: duid aan of u een risicoanalyse of werkpostfiche hebt, of dat u geen werknemers hebt (dan bezorgt de school u een werkpostfiche om in te vullen).",
           "**Activiteitenlijst**: wat de stagiair bij u effectief zal doen. De school stelt een lijst voor die past bij de stage (sales of onthaal). Vink af wat niet van toepassing is, voeg eigen activiteiten toe en duid aan wat enkel **onder rechtstreeks toezicht** mag (bijvoorbeeld de kassa). Minstens vijf activiteiten. De lijst komt als bijlage bij het contract.",
           "**Bijzondere afspraken**: toestellen of taken die de stagiair niet mag gebruiken of doen, en andere afspraken zoals kledij of pauzes.",
         ],
@@ -82,6 +82,15 @@ export const HANDLEIDINGEN: Record<Wie, HandleidingInhoud> = {
           "Een digitale handtekening heeft dezelfde waarde als een handtekening op papier. Een papieren versie is niet nodig.",
         ],
         tip: "Na uw handtekening kan u de gegevens niet meer zelf wijzigen. Klopt er toch iets niet, mail dan naar retail2sale@snh.be.",
+      },
+      {
+        titel: "Risicoanalyse of werkpostfiche opladen",
+        wanneer: "Vóór de eerste stagedag",
+        tekst: [
+          "Onderaan de contractpagina, bij **Risicoanalyse of werkpostfiche**, laadt u het document op: de risicoanalyse of werkpostfiche van de werkpost waar de stagiair werkt. Een pdf, Word-bestand of een duidelijke foto volstaat (maximum 4 MB).",
+          "Hebt u geen werknemers, dan vindt u daar de blanco werkpostfiche van de school. Vul ze in en laad ze op dezelfde plek op.",
+        ],
+        tip: "Zolang de stagebegeleiding het document niet nagekeken heeft, kan u het nog verwijderen en opnieuw opladen.",
       },
       {
         titel: "De andere partijen tekenen",
