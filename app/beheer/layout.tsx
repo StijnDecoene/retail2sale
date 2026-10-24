@@ -5,6 +5,8 @@ import Zijbalk from "@/components/beheer/Zijbalk";
 import { huidigeGebruiker, serverClient } from "@/lib/supabase/server";
 import { schooljaarVan } from "@/lib/beheer";
 import { teBeoordelen } from "@/lib/dossiers-server";
+import { nieuweMeldingen } from "@/lib/meldingen-server";
+import MeldBalk from "@/components/beheer/MeldBalk";
 
 export const metadata: Metadata = { title: { default: "Beheer", template: "%s | Beheer Retail2Sale" }, robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -37,10 +39,11 @@ export default async function BeheerLayout({ children }: { children: React.React
 
   const sbPub = await serverClient("public");
   const sb = await serverClient();
-  const [{ count: nieuweVragen }, { count: leerlingen }, nakijken] = await Promise.all([
+  const [{ count: nieuweVragen }, { count: leerlingen }, nakijken, meld] = await Promise.all([
     sbPub.from("vragen").select("id", { count: "exact", head: true }).eq("status", "nieuw"),
     sb.from("leerlingen").select("id", { count: "exact", head: true }).eq("schooljaar", schooljaarVan()),
     teBeoordelen(sb),
+    nieuweMeldingen(sb, begeleider.id),
   ]);
 
   return (
@@ -56,7 +59,7 @@ export default async function BeheerLayout({ children }: { children: React.React
           <b>Stagebeheer</b>
           <span>Onthaal, organisatie en sales</span>
         </div>
-        <Zijbalk tellers={{ "/beheer/vragen": nieuweVragen ?? 0, "/beheer/leerlingen": leerlingen ?? 0, "/beheer/dossiers": nakijken.totaal, "/beheer/afwezigheden": nakijken.afwezig + nakijken.losInhaal }} />
+        <Zijbalk tellers={{ "/beheer/vragen": nieuweVragen ?? 0, "/beheer/leerlingen": leerlingen ?? 0, "/beheer/dossiers": nakijken.totaal, "/beheer/afwezigheden": nakijken.afwezig + nakijken.losInhaal, "/beheer/meldingen": meld.totaal }} />
         <div className="bh-wie">
           <span className="av" style={{ background: begeleider.kleur ?? "#1D5BAA" }} aria-hidden="true">
             {begeleider.naam.split(" ").map((d) => d[0]).join("").slice(0, 2)}
@@ -70,7 +73,10 @@ export default async function BeheerLayout({ children }: { children: React.React
           </form>
         </div>
       </aside>
-      <main className="bh-main">{children}</main>
+      <main className="bh-main">
+        <MeldBalk totaal={meld.totaal} perSoort={meld.perSoort} />
+        {children}
+      </main>
     </div>
   );
 }
