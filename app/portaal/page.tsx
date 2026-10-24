@@ -6,6 +6,10 @@ import { AanvraagSamenvatting, Top3Samenvatting } from "@/components/portaal/Sam
 import Top3Formulier from "./Top3Formulier";
 import AanvraagFormulier from "./AanvraagFormulier";
 import RoosterEditor from "@/components/rooster/RoosterEditor";
+import TijdensStage from "@/components/rooster/TijdensStage";
+import { laadTijdens } from "@/lib/tijdens-server";
+import { stand, standTekst } from "@/lib/tijdens";
+import { vandaagIso } from "@/lib/beheer";
 
 type Zoek = Promise<{ leerling?: string; blok?: string; stap?: string }>;
 
@@ -76,7 +80,11 @@ export default async function Portaal({ searchParams }: { searchParams: Zoek }) 
 
   const { status } = d;
   const eersteOpen = STAPPEN.find((s) => ["action", "fix"].includes(status[s.k].state))?.k ?? STAPPEN.find((s) => status[s.k].state === "wait")?.k ?? "top3";
-  const stap = (STAPPEN.some((s) => s.k === zp.stap) ? zp.stap : eersteOpen) as StapKey;
+  const tijdens = zp.stap === "tijdens" && d.rooster;
+  const stap = (tijdens ? "tijdens" : STAPPEN.some((s) => s.k === zp.stap) ? zp.stap : eersteOpen) as StapKey | "tijdens";
+  const t = d.rooster ? await laadTijdens(sb, { dossier: d.dossier.id }) : null;
+  const vandaag = vandaagIso();
+  const tst = t && d.rooster ? stand(t, d.rooster.blok, vandaag) : null;
   const b3 = d.beoordelingen.find((b) => b.stap === "top3");
   const ba = d.beoordelingen.find((b) => b.stap === "aanvraag");
   const goedgekeurd = b3?.status === "goedgekeurd" ? b3.keuzes : [];
@@ -125,6 +133,14 @@ export default async function Portaal({ searchParams }: { searchParams: Zoek }) 
           );
         })}
       </ol>
+
+      {d.rooster && t && tst && (
+        <Link href={link({ blok: blok.id, stap: "tijdens" })} className={`pt-tijdens${stap === "tijdens" ? " on" : ""}`} aria-current={stap === "tijdens" ? "page" : undefined}>
+          <b>Tijdens de stage: afwezigheden en inhaalstage</b>
+          <small>{standTekst(tst)}</small>
+          {(tst.open > 0 || tst.nietGekoppeld.length > 0) && <span className="pill warn">Actie nodig</span>}
+        </Link>
+      )}
 
       {stap === "top3" && (
         <section className="pt-paneel">
@@ -235,6 +251,16 @@ export default async function Portaal({ searchParams }: { searchParams: Zoek }) 
               )}
             </>
           )}
+        </section>
+      )}
+
+      {stap === "tijdens" && d.rooster && t && (
+        <section className="pt-paneel">
+          <div className="pt-paneel-kop">
+            <h2>Afwezigheden en inhaalstage</h2>
+            <p>Afwezig? Verwittig vóór de start telefonisch de winkel, beide stagebegeleiders en het secretariaat, en meld het daarna hier. Gemiste uren haal je in.</p>
+          </div>
+          <TijdensStage key={`${t.afwezigheden.length}-${t.inhaal.length}`} ctx={d.rooster} t={t} sleutel={{ dossier: d.dossier.id }} vandaag={vandaag} naamStart={`${leerling.voornaam} ${leerling.naam}`} />
         </section>
       )}
 

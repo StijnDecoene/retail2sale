@@ -4,6 +4,7 @@ import { doetMee, schooljaarVan, vandaagIso, volledigeNaam, type Blok, type Doss
 import { schoolActie, stapStatus, type AanvraagRij, type Beoordeling, type ContractStand, type StapStatus, type Top3Rij } from "@/lib/portaal";
 import { ROL_LABEL, nodigeRollen, type Rol } from "@/lib/contract";
 import { roosterStand, uren, type RoosterRij } from "@/lib/werkrooster";
+import { stand, type Afwezigheid, type Inhaal, type Stand } from "@/lib/tijdens";
 
 export const metadata = { title: "Stagedossiers" };
 
@@ -32,6 +33,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
   let top3: Top3Rij[] = [], aanvragen: AanvraagRij[] = [], beoordelingen: Beoordeling[] = [];
   const contracten = new Map<string, NonNullable<ContractStand>>();
   const roosters = new Map<string, RoosterRij>();
+  const tijdens = new Map<string, Stand>();
   if (blok) {
     const { data } = await sb.from("dossiers").select("*").eq("blok_id", blok.id);
     dossiers = (data ?? []) as Dossier[];
@@ -52,6 +54,14 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
       ]);
       const { data: rs } = await sb.from("roosters").select("dossier_id, status, vorige, totaal_min, ingediend_op").in("dossier_id", ids);
       for (const r of (rs ?? []) as RoosterRij[]) roosters.set(r.dossier_id, r);
+      const [{ data: af }, { data: ih }] = await Promise.all([
+        sb.from("afwezigheden").select("*").in("dossier_id", ids),
+        sb.from("inhaalmomenten").select("*").in("dossier_id", ids),
+      ]);
+      const afw = (af ?? []) as Afwezigheid[], inh = (ih ?? []) as Inhaal[];
+      for (const id of new Set(afw.map((a) => a.dossier_id))) {
+        tijdens.set(id, stand({ afwezigheden: afw.filter((a) => a.dossier_id === id), inhaal: inh.filter((i) => i.dossier_id === id).map((i) => ({ ...i, afw: i.afw ?? [] })) }, blok, vandaag));
+      }
       for (const c of (cs ?? []) as { dossier_id: string; meerderjarig: boolean; afgerond_op: string | null }[]) {
         contracten.set(c.dossier_id, { meerderjarig: c.meerderjarig, afgerond_op: c.afgerond_op, getekend: ((ps ?? []) as { dossier_id: string; rol: string }[]).filter((p) => p.dossier_id === c.dossier_id).map((p) => p.rol) });
       }
@@ -86,9 +96,10 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
     }
     const top = d ? t3.get(d.id) : undefined;
     const aanv = d ? aa.get(d.id) : undefined;
-    const actie = schoolActie(st);
+    const ts = d ? tijdens.get(d.id) : undefined;
+    const actie = schoolActie(st) ?? (ts?.teBeoordelen.length ? "afwezig" : null);
     const ingediend = actie === "top3" ? top?.ingediend_op : actie === "aanvraag" ? aanv?.ingediend_op : actie === "rooster" ? rooster?.ingediend_op : null;
-    return { l, d, st, actie, ingediend, contract, rooster };
+    return { l, d, st, actie, ingediend, contract, rooster, ts };
   });
 
   const tel = {
@@ -98,6 +109,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
     klaar: rijen.filter((r) => r.st.aanvraag.state === "done").length,
     contract: rijen.filter((r) => r.contract && r.contract.label !== "Ondertekend" && r.contract.label !== "Al geregeld").length,
     rooster: rijen.filter((r) => r.st.rooster.state === "action" || r.st.rooster.state === "fix").length,
+    inhalen: rijen.filter((r) => r.ts && r.ts.rest > 0).length,
   };
   const zoek = q.trim().toLowerCase();
   const lijst = rijen
@@ -108,6 +120,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
       if (filter === "top3") return r.st.top3.state === "action" || r.st.top3.state === "fix";
       if (filter === "aanvraag") return r.st.aanvraag.state === "action" || r.st.aanvraag.state === "fix";
       if (filter === "klaar") return r.st.aanvraag.state === "done";
+      if (filter === "inhalen") return !!r.ts && r.ts.rest > 0;
       if (filter === "rooster") return r.st.rooster.state === "action" || r.st.rooster.state === "fix";
       if (filter === "contract") return !!r.contract && r.contract.label !== "Ondertekend" && r.contract.label !== "Al geregeld";
       return true;
@@ -138,6 +151,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
         <Link href={href("klaar")} className="bh-kpi"><span className="l">Stageplaats rond</span><span className="v">{tel.klaar}<small> / {rijen.length}</small></span></Link>
         <Link href={href("contract")} className="bh-kpi"><span className="l">Contract nog niet ondertekend</span><span className="v">{tel.contract}</span></Link>
         <Link href={href("rooster")} className="bh-kpi"><span className="l">Werkrooster nog niet ingediend</span><span className="v">{tel.rooster}</span></Link>
+        <Link href={href("inhalen")} className="bh-kpi"><span className="l">Uren nog in te halen</span><span className="v">{tel.inhalen}</span></Link>
       </div>
 
       <form className="bh-toolbar" method="get">
@@ -155,6 +169,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
           <option value="klaar">Stageplaats rond</option>
           <option value="contract">Contract nog niet volledig ondertekend</option>
           <option value="rooster">Werkrooster nog niet ingediend</option>
+          <option value="inhalen">Uren nog in te halen</option>
         </select>
         <button className="bh-btn" type="submit">Toon</button>
         {(q || klas || filter) && <Link href={href("")} className="bh-link">Wis filters</Link>}
@@ -166,10 +181,10 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
         ) : (
           <table className="bh-tabel">
             <thead>
-              <tr><th>Leerling</th><th>Klas</th><th>Top 3</th><th>Aanvraag</th><th>Contract</th><th>Werkrooster</th><th>Stageplaats</th><th>Begeleider</th><th></th></tr>
+              <tr><th>Leerling</th><th>Klas</th><th>Top 3</th><th>Aanvraag</th><th>Contract</th><th>Werkrooster</th><th>Afwezig</th><th>Stageplaats</th><th>Begeleider</th><th></th></tr>
             </thead>
             <tbody>
-              {lijst.map(({ l, d, st, actie, contract, rooster }) => {
+              {lijst.map(({ l, d, st, actie, contract, rooster, ts }) => {
                 const p = d?.stageplaats_id ? plaatsen.get(d.stageplaats_id) : null;
                 const g = d?.begeleider_id ? begeleiders.get(d.begeleider_id) : null;
                 const open = d ? `/beheer/dossiers/${d.id}` : `/beheer/leerlingen/${l.id}`;
@@ -181,6 +196,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
                     <td>{st.aanvraag.state === "locked" ? <span className="sm">–</span> : <span className={`pill ${TOON[st.aanvraag.state]}`}>{st.aanvraag.label}</span>}</td>
                     <td>{contract ? <><span className={`pill ${contract.toon}`}>{contract.label}</span>{contract.titel && <small className="sm bh-ct-nog"> {contract.titel}</small>}</> : <span className="sm">–</span>}</td>
                     <td>{st.rooster.state === "locked" || st.rooster.code === "klaarzetten" ? <span className="sm">–</span> : <span className={`pill ${TOON[st.rooster.state]}`} title={rooster ? `${uren(rooster.totaal_min)} gepland` : undefined}>{st.rooster.label}</span>}</td>
+                    <td>{!ts ? <span className="sm">–</span> : ts.teBeoordelen.length ? <span className="pill in">{ts.teBeoordelen.length} te beoordelen</span> : ts.rest ? <span className={`pill ${ts.verstreken ? "bad" : "warn"}`} title={`${uren(ts.ingehaald)} ingehaald, ${uren(ts.gepland)} gepland`}>{ts.verstreken ? "Termijn verstreken" : `nog ${uren(ts.rest)} in te halen`}</span> : <span className="pill ok">{ts.nodig ? "Ingehaald" : "Niets in te halen"}</span>}</td>
                     <td>{p ? <>{p.naam}{p.gemeente ? <small className="sm"> · {p.gemeente}</small> : null}</> : <span className="sm">–</span>}</td>
                     <td>{g ? <span className="beg" style={{ background: g.kleur ?? "#1D5BAA" }}>{g.naam}</span> : <span className="sm">–</span>}</td>
                     <td>{actie && d ? <Link prefetch={false} className="bh-btn sm pri" href={open}>Nakijken</Link> : null}</td>
