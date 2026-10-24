@@ -3,6 +3,9 @@ import Ondertekening from "./Ondertekening";
 import Kopieer from "./Kopieer";
 import DirectieTekenen from "./DirectieTekenen";
 import ActiviteitenBeheer from "./ActiviteitenBeheer";
+import Documenten from "./Documenten";
+import { documentenLijst } from "@/lib/documenten-server";
+import { risicoOntvangen } from "@/lib/documenten";
 import { contractGegevensBewaren, contractHandtekeningWissen, contractKlaarzettenActie, contractLeeftijdHerbepalen, contractLinkMailen } from "@/app/beheer/contract-acties";
 import { leeftijdOp } from "@/lib/portaal";
 import { contractBeheer } from "@/lib/contract-server";
@@ -38,6 +41,7 @@ export default async function ContractKaart({
   }
   const st = contractStatus(d);
   const g = effectief(d);
+  const docs = (await documentenLijst(sb, { dossier: dossierId })) ?? [];
   const mailAan = mailIngesteld();
   const linkRollen = nodigeRollen(d.contract.meerderjarig).filter((r): r is Exclude<Rol, "directie"> => r !== "directie");
   const beheerder = ik.rol === "beheerder" || ik.rol === "directie";
@@ -159,6 +163,19 @@ export default async function ContractKaart({
               <label className="f full">Andere afspraken<textarea name="afspraken" defaultValue={g.afspraken} /></label>
             </div>
           </Formulier>
+        </details>
+
+        <details className="bh-toevoegen bh-ct-sub" open={docs.some((x) => !x.nagekeken_op && x.soort !== "ander") || undefined}>
+          <summary>
+            Risicoanalyse of werkpostfiche{" "}
+            {risicoOntvangen(docs)
+              ? docs.some((x) => !x.nagekeken_op && x.soort !== "ander") ? <span className="pill in">na te kijken</span> : <span className="pill ok">in orde</span>
+              : <span className="pill warn">{g.risico === "stuur" ? "werkpostfiche sturen" : "nog niet ontvangen"}</span>}
+          </summary>
+          <div className="bd">
+            {g.risico === "stuur" && !risicoOntvangen(docs) && <p className="bh-melding">De stagegever heeft geen werknemers. Laad hieronder een blanco werkpostfiche op (soort &lsquo;voor de stagegever&rsquo;): de stagegever ziet die bij zijn contract en laadt de ingevulde fiche op.</p>}
+            <Documenten modus="school" dossierId={dossierId} docs={docs} />
+          </div>
         </details>
 
         <details className="bh-toevoegen bh-ct-sub">

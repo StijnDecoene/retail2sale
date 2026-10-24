@@ -6,8 +6,8 @@ import { meldingenGelezen } from "../meldingen-acties";
 
 export const metadata = { title: "Meldingen" };
 
-const LABEL: Record<string, string> = { afwezigheid: "Afwezigheid", inhaal: "Inhaalstage", rooster: "Werkrooster", contract: "Contract", top3: "Top 3", aanvraag: "Aanvraag", evaluatie: "Evaluatie", afronding: "Afronding" };
-const TOON: Record<string, string> = { afwezigheid: "warn", inhaal: "in", rooster: "in", contract: "ok", top3: "mut", aanvraag: "mut", evaluatie: "ok", afronding: "ok" };
+const LABEL: Record<string, string> = { afwezigheid: "Afwezigheid", inhaal: "Inhaalstage", rooster: "Werkrooster", contract: "Contract", top3: "Top 3", aanvraag: "Aanvraag", evaluatie: "Evaluatie", afronding: "Afronding", document: "Document" };
+const TOON: Record<string, string> = { afwezigheid: "warn", inhaal: "in", rooster: "in", contract: "ok", top3: "mut", aanvraag: "mut", evaluatie: "ok", afronding: "ok", document: "in" };
 const dag = (iso: string) => new Date(iso).toLocaleDateString("nl-BE", { timeZone: "Europe/Brussels", weekday: "long", day: "numeric", month: "long" });
 const uur = (iso: string) => new Date(iso).toLocaleTimeString("nl-BE", { timeZone: "Europe/Brussels", hour: "2-digit", minute: "2-digit" });
 

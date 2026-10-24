@@ -32,6 +32,8 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
   const contracten = new Map<string, NonNullable<ContractStand>>();
   const roosters = new Map<string, RoosterRij>();
   const tijdens = new Map<string, Stand>();
+  const docs = new Map<string, { ontvangen: boolean; open: boolean }>();
+  const risicoKeuze = new Map<string, string>();
   if (blok) {
     const { data } = await sb.from("dossiers").select("*").eq("blok_id", blok.id);
     dossiers = (data ?? []) as Dossier[];
@@ -47,7 +49,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
       beoordelingen = (o.data ?? []) as Beoordeling[];
       // Contract: stand van de ondertekening (tabellen bestaan pas na de contractmigratie).
       const [{ data: cs }, { data: ps }] = await Promise.all([
-        sb.from("contracten").select("dossier_id, meerderjarig, afgerond_op").in("dossier_id", ids),
+        sb.from("contracten").select("dossier_id, meerderjarig, afgerond_op, gegevens").in("dossier_id", ids),
         sb.from("contract_partijen").select("dossier_id, rol").in("dossier_id", ids).not("getekend_op", "is", null),
       ]);
       const { data: rs } = await sb.from("roosters").select("dossier_id, status, vorige, totaal_min, ingediend_op").in("dossier_id", ids);
@@ -60,6 +62,13 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
       for (const id of new Set(afw.map((a) => a.dossier_id))) {
         tijdens.set(id, stand({ afwezigheden: afw.filter((a) => a.dossier_id === id), inhaal: inh.filter((i) => i.dossier_id === id).map((i) => ({ ...i, afw: i.afw ?? [] })) }, blok, vandaag));
       }
+      const { data: dc } = await sb.from("documenten").select("dossier_id, soort, nagekeken_op").in("dossier_id", ids);
+      for (const x of (dc ?? []) as { dossier_id: string; soort: string; nagekeken_op: string | null }[]) {
+        if (x.soort === "ander") continue;
+        const o = docs.get(x.dossier_id) ?? { ontvangen: false, open: false };
+        docs.set(x.dossier_id, { ontvangen: true, open: o.open || !x.nagekeken_op });
+      }
+      for (const c of (cs ?? []) as { dossier_id: string; gegevens: { risico?: string } | null }[]) risicoKeuze.set(c.dossier_id, c.gegevens?.risico ?? "");
       for (const c of (cs ?? []) as { dossier_id: string; meerderjarig: boolean; afgerond_op: string | null }[]) {
         contracten.set(c.dossier_id, { meerderjarig: c.meerderjarig, afgerond_op: c.afgerond_op, getekend: ((ps ?? []) as { dossier_id: string; rol: string }[]).filter((p) => p.dossier_id === c.dossier_id).map((p) => p.rol) });
       }
@@ -95,9 +104,11 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
     const top = d ? t3.get(d.id) : undefined;
     const aanv = d ? aa.get(d.id) : undefined;
     const ts = d ? tijdens.get(d.id) : undefined;
-    const actie = schoolActie(st) ?? (ts?.teBeoordelen.length ? "afwezig" : null);
+    const doc = d ? docs.get(d.id) : undefined;
+    const actie = schoolActie(st) ?? (ts?.teBeoordelen.length ? "afwezig" : null) ?? (doc?.open ? "document" : null);
     const ingediend = actie === "top3" ? top?.ingediend_op : actie === "aanvraag" ? aanv?.ingediend_op : actie === "rooster" ? rooster?.ingediend_op : null;
-    return { l, d, st, actie, ingediend, contract, rooster, ts };
+    const risico = !c ? null : doc?.open ? { toon: "in", label: "Na te kijken" } : doc?.ontvangen ? { toon: "ok", label: "In orde" } : c.getekend.includes("stagegever") ? { toon: "warn", label: risicoKeuze.get(d!.id) === "stuur" ? "Fiche sturen" : "Ontbreekt" } : { toon: "mut", label: "–" };
+    return { l, d, st, actie, ingediend, contract, rooster, ts, risico };
   });
 
   const tel = {
@@ -108,6 +119,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
     contract: rijen.filter((r) => r.contract && r.contract.label !== "Ondertekend" && r.contract.label !== "Al geregeld").length,
     rooster: rijen.filter((r) => r.st.rooster.state === "action" || r.st.rooster.state === "fix").length,
     inhalen: rijen.filter((r) => r.ts && r.ts.rest > 0).length,
+    risico: rijen.filter((r) => r.risico && (r.risico.label === "Ontbreekt" || r.risico.label === "Fiche sturen" || r.risico.label === "Na te kijken")).length,
   };
   const zoek = q.trim().toLowerCase();
   const lijst = rijen
@@ -120,6 +132,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
       if (filter === "klaar") return r.st.aanvraag.state === "done";
       if (filter === "inhalen") return !!r.ts && r.ts.rest > 0;
       if (filter === "rooster") return r.st.rooster.state === "action" || r.st.rooster.state === "fix";
+      if (filter === "risico") return !!r.risico && ["Ontbreekt", "Fiche sturen", "Na te kijken"].includes(r.risico.label);
       if (filter === "contract") return !!r.contract && r.contract.label !== "Ondertekend" && r.contract.label !== "Al geregeld";
       return true;
     })
@@ -150,6 +163,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
         <Link href={href("contract")} className="bh-kpi"><span className="l">Contract nog niet ondertekend</span><span className="v">{tel.contract}</span></Link>
         <Link href={href("rooster")} className="bh-kpi"><span className="l">Werkrooster nog niet ingediend</span><span className="v">{tel.rooster}</span></Link>
         <Link href={href("inhalen")} className="bh-kpi"><span className="l">Uren nog in te halen</span><span className="v">{tel.inhalen}</span></Link>
+        <Link href={href("risico")} className="bh-kpi"><span className="l">Risicoanalyse open</span><span className="v">{tel.risico}</span></Link>
       </div>
 
       <form className="bh-toolbar" method="get">
@@ -168,6 +182,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
           <option value="contract">Contract nog niet volledig ondertekend</option>
           <option value="rooster">Werkrooster nog niet ingediend</option>
           <option value="inhalen">Uren nog in te halen</option>
+          <option value="risico">Risicoanalyse ontbreekt of na te kijken</option>
         </select>
         <button className="bh-btn" type="submit">Toon</button>
         {(q || klas || filter) && <Link href={href("")} className="bh-link">Wis filters</Link>}
@@ -179,10 +194,10 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
         ) : (
           <table className="bh-tabel">
             <thead>
-              <tr><th>Leerling</th><th>Klas</th><th>Top 3</th><th>Aanvraag</th><th>Contract</th><th>Werkrooster</th><th>Afwezig</th><th>Stageplaats</th><th></th></tr>
+              <tr><th>Leerling</th><th>Klas</th><th>Top 3</th><th>Aanvraag</th><th>Contract</th><th>Risicoanalyse</th><th>Werkrooster</th><th>Afwezig</th><th>Stageplaats</th><th></th></tr>
             </thead>
             <tbody>
-              {lijst.map(({ l, d, st, actie, contract, rooster, ts }) => {
+              {lijst.map(({ l, d, st, actie, contract, rooster, ts, risico }) => {
                 const p = d?.stageplaats_id ? plaatsen.get(d.stageplaats_id) : null;
                 const open = d ? `/beheer/dossiers/${d.id}` : `/beheer/leerlingen/${l.id}`;
                 return (
@@ -192,6 +207,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
                     <td><span className={`pill ${TOON[st.top3.state]}`}>{st.top3.label}</span></td>
                     <td>{st.aanvraag.state === "locked" ? <span className="sm">–</span> : <span className={`pill ${TOON[st.aanvraag.state]}`}>{st.aanvraag.label}</span>}</td>
                     <td>{contract ? <><span className={`pill ${contract.toon}`}>{contract.label}</span>{contract.titel && <small className="sm bh-ct-nog"> {contract.titel}</small>}</> : <span className="sm">–</span>}</td>
+                    <td>{risico && risico.label !== "–" ? <span className={`pill ${risico.toon}`}>{risico.label}</span> : <span className="sm">–</span>}</td>
                     <td>{st.rooster.state === "locked" || st.rooster.code === "klaarzetten" ? <span className="sm">–</span> : <span className={`pill ${TOON[st.rooster.state]}`} title={rooster ? `${uren(rooster.totaal_min)} gepland` : undefined}>{st.rooster.label}</span>}</td>
                     <td>{!ts ? <span className="sm">–</span> : ts.teBeoordelen.length ? <span className="pill in">{ts.teBeoordelen.length} te beoordelen</span> : ts.rest ? <span className={`pill ${ts.verstreken ? "bad" : "warn"}`} title={`${uren(ts.ingehaald)} ingehaald, ${uren(ts.gepland)} gepland`}>{ts.verstreken ? "Termijn verstreken" : `nog ${uren(ts.rest)} in te halen`}</span> : <span className="pill ok">{ts.nodig ? "Ingehaald" : "Niets in te halen"}</span>}</td>
                     <td>{p ? <>{p.naam}{p.gemeente ? <small className="sm"> · {p.gemeente}</small> : null}</> : <span className="sm">–</span>}</td>

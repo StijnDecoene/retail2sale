@@ -16,6 +16,8 @@ export type StagiairKort = {
   feedback: "concept" | "ingediend" | null;
   afgerond: boolean;
   te_bevestigen: number;
+  risico?: string;
+  risico_doc?: boolean;
 };
 export type Overzicht = { email: string; stagiairs: StagiairKort[] };
 
@@ -28,6 +30,14 @@ export function taken(s: StagiairKort, vandaag: string): Taak[] {
   if (!s.getekend) t.push({ tekst: "Stagecontract aanvullen en ondertekenen", uitleg: "Ongeveer 5 minuten", href: `/contract/${s.token}`, dringend: true });
   if (s.getekend && (!s.rooster || s.rooster === "concept" || s.rooster === "terug")) {
     t.push({ tekst: s.rooster === "terug" ? "Werkrooster aanpassen" : "Werkrooster plannen en indienen", uitleg: `Vóór de eerste stagedag · ongeveer 10 minuten`, href: l(), dringend: vandaag >= plusDagen(s.start_datum, -14) });
+  }
+  if (s.getekend && s.risico_doc === false && vandaag <= s.eind_datum) {
+    t.push({
+      tekst: s.risico === "stuur" ? "Werkpostfiche invullen en opladen" : "Risicoanalyse of werkpostfiche opladen",
+      uitleg: "Vóór de eerste stagedag · pdf, Word of foto",
+      href: `/contract/${s.token}#risico`,
+      dringend: vandaag >= plusDagen(s.start_datum, -14),
+    });
   }
   if (s.te_bevestigen > 0) t.push({ tekst: "Inhaalstage bevestigen", uitleg: "Bevestig dat de ingehaalde uren gepresteerd zijn", href: l("?tab=afwezig"), dringend: true });
   if (vandaag >= plusDagen(s.eind_datum, -7) && s.mentor_eval !== "ingediend") {

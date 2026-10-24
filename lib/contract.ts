@@ -218,7 +218,7 @@ export function contractTekst(d: ContractData): Sectie[] {
       h("Artikel 5"),
       p("De stagegever volgt de communicatie over de stage op via het stageplatform: afwezigheden en inhaalstage, planning en evaluaties."),
       h("Artikel 6"),
-      p("Vóór de stage moet er voor de activiteiten van de stagiair een risicoanalyse beschikbaar zijn, die de risico's voor de veiligheid en de fysieke en psychische gezondheid van de stagiair in kaart brengt. Een werkgever met werknemers heeft een risicoanalyse per werkpost of activiteit; die geldt ook voor de stagiair op die werkpost. De risicoanalyse of werkpostfiche wordt digitaal bezorgd vóór de aanvang van de stage. Een eenmanszaak zonder werknemers ontvangt op vraag van de school een werkpostfiche om in te vullen."),
+      p("Vóór de stage moet er voor de activiteiten van de stagiair een risicoanalyse beschikbaar zijn, die de risico's voor de veiligheid en de fysieke en psychische gezondheid van de stagiair in kaart brengt. Een werkgever met werknemers heeft een risicoanalyse per werkpost of activiteit; die geldt ook voor de stagiair op die werkpost. De stagegever laadt de risicoanalyse of werkpostfiche vóór de aanvang van de stage op via het stageplatform. Een eenmanszaak zonder werknemers ontvangt van de school een werkpostfiche om in te vullen en op te laden."),
       p("Keuze van de stagegever: ", v(g.risico === "heb" ? "de stagegever heeft een risicoanalyse of werkpostfiche en bezorgt die vóór de start" : g.risico === "stuur" ? "de stagegever heeft geen werknemers en ontvangt een werkpostfiche van de school" : "", "nog aan te duiden")),
       h("Artikel 7"),
       p("Zaken die niet geregeld zijn, worden opgelost op een manier die het goede verloop en het nut van de stage ten goede komt."),
