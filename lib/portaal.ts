@@ -210,10 +210,11 @@ export function stapStatus(d: {
 }
 
 /** Wat moet de school doen met dit dossier? (voor tellers en "Actie nodig") */
-export function schoolActie(s: Record<StapKey, StapStatus>): "top3" | "aanvraag" | "rooster" | null {
+export function schoolActie(s: Record<StapKey, StapStatus>): "top3" | "aanvraag" | "rooster" | "contract" | null {
   if (s.top3.state === "wait") return "top3";
   if (s.aanvraag.state === "wait") return "aanvraag";
   if (s.rooster.state === "wait" && s.rooster.code !== "klaarzetten") return "rooster";
+  if (s.contract.code === "school") return "contract";
   return null;
 }
 
