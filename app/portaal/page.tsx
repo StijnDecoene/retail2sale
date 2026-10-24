@@ -7,6 +7,10 @@ import Top3Formulier from "./Top3Formulier";
 import AanvraagFormulier from "./AanvraagFormulier";
 import RoosterEditor from "@/components/rooster/RoosterEditor";
 import TijdensStage from "@/components/rooster/TijdensStage";
+import EvaluatieForm from "@/components/evaluatie/EvaluatieForm";
+import EvaluatieWeergave from "@/components/evaluatie/EvaluatieWeergave";
+import { laadEvaluatie } from "@/lib/evaluaties-server";
+import { formulier } from "@/lib/evaluaties";
 import { laadTijdens } from "@/lib/tijdens-server";
 import { stand, standTekst } from "@/lib/tijdens";
 import { vandaagIso } from "@/lib/beheer";
@@ -81,7 +85,10 @@ export default async function Portaal({ searchParams }: { searchParams: Zoek }) 
   const { status } = d;
   const eersteOpen = STAPPEN.find((s) => ["action", "fix"].includes(status[s.k].state))?.k ?? STAPPEN.find((s) => status[s.k].state === "wait")?.k ?? "top3";
   const tijdens = zp.stap === "tijdens" && d.rooster;
-  const stap = (tijdens ? "tijdens" : STAPPEN.some((s) => s.k === zp.stap) ? zp.stap : eersteOpen) as StapKey | "tijdens";
+  const evalStap = zp.stap === "evaluatie" && d.rooster;
+  const stap = (tijdens ? "tijdens" : evalStap ? "evaluatie" : STAPPEN.some((s) => s.k === zp.stap) ? zp.stap : eersteOpen) as StapKey | "tijdens" | "evaluatie";
+  const ev = d.rooster ? await laadEvaluatie(sb, { dossier: d.dossier.id }) : null;
+  const zelf = ev?.evaluaties.find((e) => e.soort === "zelf");
   const t = d.rooster ? await laadTijdens(sb, { dossier: d.dossier.id }) : null;
   const vandaag = vandaagIso();
   const tst = t && d.rooster ? stand(t, d.rooster.blok, vandaag) : null;
@@ -139,6 +146,13 @@ export default async function Portaal({ searchParams }: { searchParams: Zoek }) 
           <b>Tijdens de stage: afwezigheden en inhaalstage</b>
           <small>{standTekst(tst)}</small>
           {(tst.open > 0 || tst.nietGekoppeld.length > 0) && <span className="pill warn">Actie nodig</span>}
+        </Link>
+      )}
+      {ev && (
+        <Link href={link({ blok: blok.id, stap: "evaluatie" })} className={`pt-tijdens${stap === "evaluatie" ? " on" : ""}`} aria-current={stap === "evaluatie" ? "page" : undefined}>
+          <b>Evaluatie</b>
+          <small>{ev.vrijgegeven ? "Je evaluatie is beschikbaar" : zelf?.status === "ingediend" ? "Zelfevaluatie ingediend" : zelf ? "Zelfevaluatie: concept" : "Vul na de stage je zelfevaluatie in"}</small>
+          {ev.vrijgegeven && <span className="pill ok">Nieuw</span>}
         </Link>
       )}
 
@@ -261,6 +275,31 @@ export default async function Portaal({ searchParams }: { searchParams: Zoek }) 
             <p>Afwezig? Verwittig vóór de start telefonisch de winkel, beide stagebegeleiders en het secretariaat, en meld het daarna hier. Gemiste uren haal je in.</p>
           </div>
           <TijdensStage key={`${t.afwezigheden.length}-${t.inhaal.length}`} ctx={d.rooster} t={t} sleutel={{ dossier: d.dossier.id }} vandaag={vandaag} naamStart={`${leerling.voornaam} ${leerling.naam}`} />
+        </section>
+      )}
+
+      {stap === "evaluatie" && ev && (
+        <section className="pt-paneel">
+          <div className="pt-paneel-kop">
+            <h2>Evaluatie</h2>
+            <p>Op het einde van de stage vul je je zelfevaluatie in. Je stagementor en de stagebegeleiding evalueren je ook; die evaluaties zie je hier zodra de stagebegeleiding ze openstelt.</p>
+          </div>
+          {ev.vrijgegeven && (
+            <>
+              {ev.eindpunt !== null && <div className="pt-feedback ok"><b>Eindpunt: {ev.eindpunt}</b>{ev.opmerking && <p>{ev.opmerking}</p>}</div>}
+              {ev.evaluaties.filter((e) => e.soort === "mentor" && e.status === "ingediend").map((e) => <EvaluatieWeergave key="m" f={formulier("mentor", ev.stage)} e={e} titel="Evaluatie door je stagementor" />)}
+              {ev.evaluaties.filter((e) => e.soort === "school" && e.status === "ingediend").map((e) => <EvaluatieWeergave key="s" f={formulier("school", ev.stage)} e={e} titel="Evaluatie van het stagebezoek" />)}
+            </>
+          )}
+          <h3 className="pt-sub">Je zelfevaluatie</h3>
+          <EvaluatieForm
+            key={zelf?.gewijzigd_op ?? "nieuw"}
+            f={formulier("zelf", ev.stage)}
+            start={zelf?.antwoorden ?? {}}
+            ingediend={zelf?.status === "ingediend"}
+            naamStart={`${leerling.voornaam} ${leerling.naam}`}
+            sleutel={{ dossier: d.dossier.id }}
+          />
         </section>
       )}
 

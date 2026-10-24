@@ -8,6 +8,9 @@ import TijdensStage from "@/components/rooster/TijdensStage";
 import { laadTijdens } from "@/lib/tijdens-server";
 import { stand } from "@/lib/tijdens";
 import { vandaagIso } from "@/lib/beheer";
+import { laadEvaluatie } from "@/lib/evaluaties-server";
+import { formulier } from "@/lib/evaluaties";
+import EvaluatieForm from "@/components/evaluatie/EvaluatieForm";
 
 export const metadata: Metadata = { title: "Werkrooster", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -20,6 +23,8 @@ export default async function RoosterPagina({ params, searchParams }: { params: 
   const vandaag = vandaagIso();
   const st = ctx && t ? stand(t, ctx.blok, vandaag) : null;
   const afw = tab === "afwezig";
+  const ev = tab === "evaluatie" && ctx ? await laadEvaluatie(sb, { token }) : null;
+  const titel = ev ? "Evaluatie" : afw ? "Afwezigheden en inhaalstage" : "Werkrooster";
   return (
     <div className="pt">
       <header className="pt-balk">
@@ -29,7 +34,7 @@ export default async function RoosterPagina({ params, searchParams }: { params: 
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/img/logo-retail2sale.png" alt="Retail2Sale" />
         </Link>
-        <b className="pt-merk">{afw ? "Afwezigheden" : "Werkrooster"}</b>
+        <b className="pt-merk">{ev ? "Evaluatie" : afw ? "Afwezigheden" : "Werkrooster"}</b>
       </header>
       <main className="pt-main">
         {!ctx ? (
@@ -42,7 +47,7 @@ export default async function RoosterPagina({ params, searchParams }: { params: 
             <header className="pt-kop">
               <div>
                 <span className="eyebrow"><span className="streep" />{ctx.blok.naam} · Onthaal, organisatie en sales</span>
-                <h1>{afw ? "Afwezigheden en inhaalstage" : "Werkrooster"}</h1>
+                <h1>{titel}</h1>
                 <p className="sub">
                   {ctx.leerling.voornaam} {ctx.leerling.naam} ({ctx.leerling.klas}) · {ctx.stagegever.winkel} · {datumMidden(ctx.blok.start_datum)} tot en met {datumMidden(ctx.blok.eind_datum)}
                 </p>
@@ -53,12 +58,28 @@ export default async function RoosterPagina({ params, searchParams }: { params: 
               </div>
             </header>
             <nav className="bh-seg pt-tabs" aria-label="Onderdeel">
-              <Link href={`/rooster/${token}`} className={afw ? undefined : "on"}>Werkrooster</Link>
+              <Link href={`/rooster/${token}`} className={afw || ev ? undefined : "on"}>Werkrooster</Link>
               <Link href={`/rooster/${token}?tab=afwezig`} className={afw ? "on" : undefined}>
                 Afwezigheden en inhaalstage{st && (st.open > 0 || st.teBevestigen.length > 0 || st.nietGekoppeld.length > 0) ? " •" : ""}
               </Link>
+              <Link href={`/rooster/${token}?tab=evaluatie`} className={ev ? "on" : undefined}>Evaluatie</Link>
             </nav>
-            {afw && t ? (
+            {ev ? (
+              <>
+                <p className="pt-intro">
+                  Op het einde van de stage beoordeelt u {ctx.leerling.voornaam}. U kan tussendoor bewaren en later verder invullen. {ctx.leerling.voornaam} ziet uw evaluatie pas wanneer de stagebegeleiding ze openstelt; dan krijgt u ze ook per mail.
+                </p>
+                <EvaluatieForm
+                  key={ev.evaluaties.find((e) => e.soort === "mentor")?.gewijzigd_op ?? "nieuw"}
+                  f={formulier("mentor", ev.stage)}
+                  start={ev.evaluaties.find((e) => e.soort === "mentor")?.antwoorden ?? {}}
+                  ingediend={ev.evaluaties.find((e) => e.soort === "mentor")?.status === "ingediend"}
+                  naamStart={ev.evaluaties.find((e) => e.soort === "mentor")?.naam ?? ctx.stagegever.mentor ?? ctx.stagegever.naam ?? ""}
+                  naamVraag="Naam stagementor"
+                  sleutel={{ token }}
+                />
+              </>
+            ) : afw && t ? (
               <>
                 <p className="pt-intro">
                   Meld hier een afwezigheid van {ctx.leerling.voornaam} en plan samen de inhaalstage. Na afloop bevestigt u dat de uren gepresteerd zijn: pas dan tellen ze als ingehaald.

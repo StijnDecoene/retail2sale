@@ -914,3 +914,48 @@ a.pt-stap:hover { border-color: var(--line-strong); color: var(--ink); }
 .bz-stop .act { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: space-between; margin-top: 4px; }
 .bz-pijlen { display: inline-flex; gap: 4px; align-items: center; }
 .bz-toevoegen { padding: 8px 0; }
+
+/* Evaluaties */
+.ev { display: flex; flex-direction: column; gap: 14px; }
+.ev-schaal { margin: 8px 0 0; padding-left: 18px; font-size: 13.5px; color: var(--ink-2); display: flex; flex-direction: column; gap: 2px; }
+.ev-vragen { display: flex; flex-direction: column; }
+.ev-v { display: flex; flex-direction: column; gap: 6px; padding: 12px 16px; border-top: 1px solid var(--line); font-size: 14.5px; }
+.ev-v:first-child { border-top: 0; }
+.ev-v > b small { color: var(--muted); font-weight: 500; }
+.ev-v textarea, .ev-v input { border: 1px solid var(--line-strong); border-radius: 10px; padding: 8px 10px; font: inherit; width: 100%; }
+.ev-v input[type="date"] { max-width: 200px; }
+.ev-l { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; align-items: baseline; }
+.ev-l .ct-link { font-size: 12.5px; }
+.ev-niveaus { display: flex; flex-wrap: wrap; gap: 6px; }
+.ev-n { border: 1px solid var(--line-strong); background: #fff; border-radius: 999px; padding: 6px 14px; font: 600 13.5px var(--f-body); color: var(--ink-2); cursor: pointer; min-height: 36px; }
+.ev-niveaus.schaal .ev-n { min-width: 42px; padding: 6px 10px; }
+.ev-n:disabled { cursor: default; opacity: .85; }
+.ev-n.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+.ev-n.n-O.on { background: #c21f2e; border-color: #c21f2e; }
+.ev-n.n-V.on { background: #c27a00; border-color: #c27a00; }
+.ev-n.n-G.on { background: #1e7a4f; border-color: #1e7a4f; }
+.ev-n.n-ZG.on { background: #135c3a; border-color: #135c3a; }
+.ev-n.n-NVT.on { background: #5a6578; border-color: #5a6578; }
+.ev-oms { color: var(--ink-2); font-size: 13px; background: #f4f6f9; border-radius: 8px; padding: 6px 10px; }
+.ev-alle { margin: 0; padding-left: 18px; font-size: 13px; color: var(--ink-2); }
+.ev-rubric.ok, .ev-v.ok { background: #fbfdfc; }
+.ev-voet { background: #fff; border-top: 1px solid var(--line); padding: 12px 16px; border-radius: 12px; box-shadow: 0 -4px 14px rgba(14, 26, 43, .06); }
+.ev-naam { display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.ev-naam input { height: 38px; border: 1px solid var(--line-strong); border-radius: 8px; padding: 0 10px; font: inherit; font-size: 14px; color: var(--ink); }
+.ev-wdeel { padding: 6px 0 10px; }
+.ev-wdeel h3 { font: 700 14.5px var(--f-display); margin-bottom: 4px; color: var(--blue); }
+.ev-wrij { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 14px; align-items: center; }
+.ev-wlang { padding: 6px 0; border-bottom: 1px solid var(--line); }
+.ev-wlang small { color: var(--muted); }
+.ev-wlang p { white-space: pre-wrap; font-size: 14px; }
+.ev-status { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+.ev-status > div { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.ev-status small { color: var(--muted); }
+.ev-punt { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: flex-end; }
+.ev-punt label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.ev-punt input, .ev-punt textarea { border: 1px solid var(--line-strong); border-radius: 8px; padding: 6px 8px; font: inherit; font-size: 14px; }
+.ev-punt input { width: 90px; height: 36px; }
+.pt-sub { font: 700 18px var(--f-display); margin-top: 6px; }
+button.bh-kpi { font: inherit; text-align: left; cursor: pointer; color: inherit; }
+.ev-mailvink { display: inline-flex !important; flex-direction: row !important; align-items: center; gap: 8px; font-size: 14px; align-self: end; }
+.ev-mailvink input { width: 16px !important; height: 16px !important; min-height: 0 !important; padding: 0 !important; margin: 0; flex: none; }

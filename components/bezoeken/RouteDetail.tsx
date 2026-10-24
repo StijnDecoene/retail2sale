@@ -131,7 +131,10 @@ export default function RouteDetail({ d, id }: { d: BezoekData; id: string }) {
                       {l.gsm && <span>Stagiair <a href={`tel:${l.gsm.replace(/[^\d+]/g, "")}`}>{l.gsm}</a></span>}
                     </div>
                     <div className="act">
-                      <BezoekVinkjes l={l} act={act} datumVoorstel={datumVoorstel} />
+                      <span className="bz-vinkjes">
+                        <BezoekVinkjes l={l} act={act} datumVoorstel={datumVoorstel} />
+                        <Link className="bz-pil" href={`/beheer/dossiers/${l.dossier_id}/evaluatie?soort=school&terug=/beheer/bezoeken/route/${r.id}`}>Bezoekformulier</Link>
+                      </span>
                       <span className="bz-pijlen">
                         <button type="button" className="bh-btn sm" disabled={i === 0 || act.bezig} onClick={() => verplaats(i, -1)} aria-label="Hoger">↑</button>
                         <button type="button" className="bh-btn sm" disabled={i === stops.length - 1 || act.bezig} onClick={() => verplaats(i, 1)} aria-label="Lager">↓</button>
