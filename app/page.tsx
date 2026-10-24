@@ -4,6 +4,7 @@ import Footer from "@/components/Footer";
 import { IcDownload, IcKalender, IcOnthaal, IcPersoon, IcSchool, IcTas, IcWinkel } from "@/components/Icons";
 import { BEGELEIDERS, BLOKKEN, SCHOOL, huidigOfVolgendBlok, periode } from "@/lib/stage";
 import VraagKnop from "@/components/VraagKnop";
+import { laadPartners } from "@/lib/supabase/publiek";
 
 // Elk uur opnieuw opbouwen, zodat "Nu bezig" mee verschuift met de datum.
 export const revalidate = 3600;
@@ -33,9 +34,17 @@ const VAKKEN = [
   { u: "7", t: "Algemene vorming", s: "wiskunde, MAVO, godsdienst en lichamelijke opvoeding" },
 ];
 
+const PROJECTEN = [
+  { t: "Mode Event in Shopping Kuurne", s: "Dertig winkels stellen hun mooiste producten tentoon. De leerlingen zorgen voor de opbouw en de presentatie." },
+  { t: "Kringloopwinkel", s: "Etalages met gebruikte en nieuwe materialen, voor de campagne \u201cNieuw is zo passé\u201d." },
+  { t: "Jonge ondernemers", s: "Samen met Onderneem in Kortrijk ontmoeten de leerlingen jonge ondernemers en bouwen ze voor elk van hen een etalage." },
+  { t: "Etalages voor winkeliers", s: "Op geregelde basis richten de leerlingen etalages in bij winkeliers in de regio. Interesse? Neem contact op." },
+];
+
 const JOBS = ["onthaal- of receptiemedewerker", "verkoopmedewerker of winkelbediende", "administratief medewerker", "medewerker klantendienst of callcenter", "kassamedewerker of afdelingsmedewerker"];
 
-export default function Home() {
+export default async function Home() {
+  const partners = await laadPartners();
   const nu = huidigOfVolgendBlok();
   const [b1, b2] = BLOKKEN;
 
@@ -245,6 +254,77 @@ export default function Home() {
                   <Link href="/handleiding/stagegever" className="btn btn-line" style={{ fontWeight: 600 }}>Zo werkt het voor stagegevers</Link>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="projecten" aria-labelledby="projtitel" className="wrap sectie">
+          <div className="flow-kop">
+            <div>
+              <span className="eyebrow">Projecten en samenwerkingen</span>
+              <h2 id="projtitel" className="h2-groot">Leren met echte opdrachten.</h2>
+            </div>
+            <p>Naast de stage werken de leerlingen aan projecten met winkels, organisaties en ondernemers uit de regio Kortrijk.</p>
+          </div>
+          <div className="projecten">
+            {PROJECTEN.map((p, i) => (
+              <div className="project" key={p.t}>
+                <span className="nr">{String(i + 1).padStart(2, "0")}</span>
+                <b>{p.t}</b>
+                <span>{p.s}</span>
+              </div>
+            ))}
+          </div>
+          <div className="reis">
+            <div className="streepjescode" aria-hidden="true" />
+            <div>
+              <span className="eyebrow">Studiereis</span>
+              <h3>Elk jaar op retailreis</h3>
+              <p>
+                Elk jaar trekken leerlingen en begeleiders op studiereis naar een stad met een sterk winkelaanbod. We bezochten al
+                onder meer Berlijn, Düsseldorf, Amsterdam en Rotterdam. Op het programma: winkelconcepten bekijken, cultuur
+                opsnuiven en, wanneer ze plaatsvindt, EuroShop in Düsseldorf, de grootste retailbeurs van Europa (om de drie jaar).
+              </p>
+            </div>
+            <ul className="steden" aria-label="Bestemmingen">
+              {["Berlijn", "Düsseldorf", "Amsterdam", "Rotterdam"].map((x) => <li key={x}>{x}</li>)}
+            </ul>
+          </div>
+        </section>
+
+        <section id="partners" aria-labelledby="parttitel" className="sectie-wit">
+          <div className="wrap sectie">
+            <div className="flow-kop">
+              <div>
+                <span className="eyebrow">Partners</span>
+                <h2 id="parttitel" className="h2-groot">Met dank aan onze stagegevers.</h2>
+              </div>
+              <p>
+                Zonder hen geen stage. We zijn onze stagegevers heel dankbaar voor de kansen die ze onze leerlingen geven,
+                in winkels, op kantoren en aan onthaalbalies in Kortrijk en Zuid-West-Vlaanderen.
+              </p>
+            </div>
+            {partners.length > 0 && (
+              <ul className="partners">
+                {partners.map((p) => {
+                  const inhoud = p.logo
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img src={`/partners/logo/${p.id}?v=${p.versie ?? 0}`} alt={p.naam} loading="lazy" />
+                    : <span>{p.naam}{p.gemeente ? <small>{p.gemeente}</small> : null}</span>;
+                  const url = p.website ? (p.website.startsWith("http") ? p.website : `https://${p.website}`) : null;
+                  return <li key={p.id}>{url ? <a className="p-kaart" href={url} target="_blank" rel="noreferrer noopener" title={p.naam}>{inhoud}</a> : <span className="p-kaart" title={p.naam}>{inhoud}</span>}</li>;
+                })}
+              </ul>
+            )}
+            <div className="partner-cta">
+              <p><b>Ook stagegever worden?</b> Of staat uw logo er nog niet bij? Laat het ons weten.</p>
+              <VraagKnop className="btn btn-dark">Neem contact op</VraagKnop>
+            </div>
+            <div className="snh-links">
+              <span className="eyebrow">Meer op snh.be</span>
+              <a href="https://www.snh.be/studieaanbod" target="_blank" rel="noreferrer">Studieaanbod Spes Nostra Heule <small>Organisatie en logistiek (3de-4de) · Onthaal, organisatie en sales (5de-6de)</small></a>
+              <a href="https://www.snh.be/sites/spes_nostra_heule/files/wysiwyg/docs/brochures/studieaanbod_2-3de_graad_web.pdf" target="_blank" rel="noreferrer">Brochure 2de en 3de graad (pdf) <small>met de lessentabellen</small></a>
+              <a href="https://www.snh.be/lessentabellen" target="_blank" rel="noreferrer">Lessentabellen <small>alle richtingen</small></a>
             </div>
           </div>
         </section>

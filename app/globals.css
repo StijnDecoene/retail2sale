@@ -1101,3 +1101,34 @@ button.bh-kpi { font: inherit; text-align: left; cursor: pointer; color: inherit
   .pijler .n { display: none; }
   .opl-blok { padding: 22px; }
 }
+.pk-logo { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.pk-voorbeeld { width: 180px; height: 90px; border: 1px solid var(--line); border-radius: 12px; display: grid; place-items: center; background: #fff; padding: 10px; text-align: center; font-weight: 700; color: var(--ink-2); }
+.pk-voorbeeld img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+/* Projecten, studiereis, partners */
+.projecten { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 16px; }
+.project { display: flex; flex-direction: column; gap: 8px; padding: 24px; border-radius: 16px; background: #fff; border: 1px solid var(--line); }
+.project .nr { font: 600 14px var(--f-display); color: var(--red); }
+.project b { font: 600 19px var(--f-display); line-height: 1.25; }
+.project span:last-child { font-size: 15px; line-height: 1.55; color: var(--ink-2); }
+.reis { position: relative; overflow: hidden; margin-top: 24px; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 32px; align-items: center; padding: 40px; border-radius: 20px; background: var(--ink); color: #fff; }
+.reis .streepjescode { position: absolute; right: 0; top: 0; bottom: 0; width: 28px; opacity: .16; background: repeating-linear-gradient(90deg, #fff 0 2px, transparent 2px 5px, #5b8fd6 5px 8px, transparent 8px 11px); }
+.reis .eyebrow { color: #a9c8f0; }
+.reis h3 { font: 600 28px var(--f-display); margin: 8px 0 12px; }
+.reis p { margin: 0; color: #c9d3e2; font-size: 16px; line-height: 1.65; }
+.steden { list-style: none; margin: 0; padding: 0 20px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.steden li { padding: 16px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); font: 600 18px var(--f-display); text-align: center; }
+@media (max-width: 760px) { .reis { grid-template-columns: 1fr; padding: 28px 24px; } }
+.partners { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.partners .p-kaart { height: 96px; display: grid; place-items: center; padding: 14px; border-radius: 14px; border: 1px solid var(--line); background: #fff; text-decoration: none; color: var(--ink); text-align: center; transition: border-color .15s, transform .15s; }
+.partners a.p-kaart:hover { border-color: var(--blue); transform: translateY(-2px); }
+.partners img { max-width: 100%; max-height: 64px; object-fit: contain; }
+.p-kaart > span { font-weight: 700; font-size: 14px; line-height: 1.3; display: flex; flex-direction: column; gap: 2px; }
+.partners small { font-weight: 500; font-size: 12px; color: var(--muted); }
+.partner-cta { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; padding: 20px 24px; border-radius: 16px; background: var(--blue-soft); }
+.partner-cta p { margin: 0; font-size: 16px; }
+.snh-links { margin-top: 32px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 12px; }
+.snh-links .eyebrow { grid-column: 1 / -1; }
+.snh-links a { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: 12px; border: 1px solid var(--line); text-decoration: none; color: var(--ink); font-weight: 600; }
+.snh-links a:hover { border-color: var(--blue); color: var(--blue); }
+.snh-links small { font-weight: 400; font-size: 13px; color: var(--muted); }
