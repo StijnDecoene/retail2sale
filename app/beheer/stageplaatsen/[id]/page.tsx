@@ -4,7 +4,8 @@ import Formulier, { ActieKnop } from "@/components/beheer/Formulier";
 import PlaatsVelden from "@/components/beheer/PlaatsVelden";
 import { plaatsBewaren, plaatsVerwijderen } from "../../acties";
 import { serverClient } from "@/lib/supabase/server";
-import { PLAATS_STATUS, volledigeNaam, type Stageplaats } from "@/lib/beheer";
+import { PLAATS_KOLOMMEN, PLAATS_STATUS, volledigeNaam, type Stageplaats } from "@/lib/beheer";
+import PartnerKaart from "@/components/beheer/PartnerKaart";
 
 export const metadata = { title: "Stageplaats" };
 
@@ -24,7 +25,7 @@ export default async function PlaatsFiche({
   const { id } = await params;
   const { nieuw } = await searchParams;
   const sb = await serverClient();
-  const { data } = await sb.from("stageplaatsen").select("*").eq("id", id).maybeSingle();
+  const { data } = await sb.from("stageplaatsen").select(`${PLAATS_KOLOMMEN}, partner, logo_op`).eq("id", id).maybeSingle();
   if (!data) notFound();
   const p = data as Stageplaats;
 
@@ -76,6 +77,8 @@ export default async function PlaatsFiche({
               </table>
             )}
           </section>
+
+          <PartnerKaart id={p.id} naam={p.naam} partner={!!p.partner} logoOp={p.logo_op ?? null} website={p.website} />
 
           <section className="bh-card bh-gevaar">
             <div className="hd"><h2>Verwijderen</h2></div>

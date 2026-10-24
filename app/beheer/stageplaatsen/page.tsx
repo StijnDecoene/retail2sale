@@ -3,7 +3,7 @@ import Formulier from "@/components/beheer/Formulier";
 import PlaatsVelden from "@/components/beheer/PlaatsVelden";
 import { plaatsToevoegen } from "../acties";
 import { serverClient } from "@/lib/supabase/server";
-import { PLAATS_STATUS, SECTOREN, schooljaarVan, vandaagIso, type Blok, type Stageplaats } from "@/lib/beheer";
+import { PLAATS_KOLOMMEN, PLAATS_STATUS, SECTOREN, schooljaarVan, vandaagIso, type Blok, type Stageplaats } from "@/lib/beheer";
 
 export const metadata = { title: "Stageplaatsen" };
 
@@ -16,7 +16,7 @@ export default async function Stageplaatsen({ searchParams }: { searchParams: Pr
   const vandaag = vandaagIso();
 
   const [pR, bR] = await Promise.all([
-    sb.from("stageplaatsen").select("*").order("naam"),
+    sb.from("stageplaatsen").select(PLAATS_KOLOMMEN).order("naam"),
     sb.from("blokken").select("*").eq("schooljaar", sj).order("start_datum"),
   ]);
   const alle = (pR.data ?? []) as Stageplaats[];

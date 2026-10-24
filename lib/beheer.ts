@@ -42,7 +42,12 @@ export type Stageplaats = {
   max_stagiairs: number;
   beoordeling: number | null;
   notities: string | null;
+  partner?: boolean;
+  logo_op?: string | null;
 };
+
+/** Kolommen van een stageplaats zonder het logo (dat kan groot zijn). */
+export const PLAATS_KOLOMMEN = "id, naam, juridische_naam, kbo, sector, status, straat, postcode, gemeente, telefoon, email, website, contactpersoon, max_stagiairs, beoordeling, notities";
 
 /** Velden die de import van stageplaatsen kan invullen. */
 export const PLAATS_IMPORT_VELDEN = [

@@ -6,7 +6,7 @@ import { verstuurBevestiging } from "@/lib/bevestiging-versturen";
 import { contractKlaarzetten } from "@/lib/contract-server";
 import { redirect } from "next/navigation";
 import { huidigeGebruiker, serverClient } from "@/lib/supabase/server";
-import { kboCijfers, leegNaarNull, plaatsSleutel, zoekPlaats, schooljaarVan, PLAATS_IMPORT_VELDEN, type PlaatsImportRij, type PlaatsImportVeld } from "@/lib/beheer";
+import { kboCijfers, leegNaarNull, plaatsSleutel, zoekPlaats, schooljaarVan, PLAATS_IMPORT_VELDEN, PLAATS_KOLOMMEN, type PlaatsImportRij, type PlaatsImportVeld } from "@/lib/beheer";
 
 export type Resultaat = { ok?: string; fout?: string } | null;
 
@@ -347,7 +347,7 @@ export async function stageplaatsenImporteren(
   if (schoon.length > 2000) return { fout: "Maximaal 2000 stageplaatsen per import." };
 
   const sb = await serverClient();
-  const { data: bestaand, error: leesFout } = await sb.from("stageplaatsen").select("*");
+  const { data: bestaand, error: leesFout } = await sb.from("stageplaatsen").select(PLAATS_KOLOMMEN);
   if (leesFout) return { fout: vertaal(leesFout, "Lezen")?.fout };
 
   type Rij = Record<string, unknown> & { id?: string };
@@ -605,7 +605,7 @@ export async function aanvraagBeoordelen(_: Resultaat, fd: FormData): Promise<Re
   };
 
   // Bestaande stageplaats zoeken: eerst op ondernemingsnummer, dan op naam + gemeente.
-  const { data: alle, error: lf } = await sb.from("stageplaatsen").select("*");
+  const { data: alle, error: lf } = await sb.from("stageplaatsen").select(PLAATS_KOLOMMEN);
   if (lf) return vertaal(lf, "Lezen");
   type P = Record<string, unknown> & { id: string; naam: string; gemeente: string | null; kbo: string | null };
   let plaats = zoekPlaats((alle ?? []) as P[], naam, gegevens.gemeente, gegevens.kbo);
