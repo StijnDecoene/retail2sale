@@ -49,7 +49,7 @@ export default function Documenten({ modus, token, dossierId, docs, risico, naam
   const doe = (f: () => Promise<{ ok?: string; fout?: string }>) => run(async () => { const r = await f(); setMsg(r); router.refresh(); });
 
   return (
-    <div className="doc">
+    <div className="dc">
       {!school && (
         <p className="pt-hint">
           {risico === "stuur"
@@ -58,17 +58,17 @@ export default function Documenten({ modus, token, dossierId, docs, risico, naam
         </p>
       )}
       {!school && vanSchool.length > 0 && (
-        <div className="doc-school">
+        <div className="dc-school">
           <b>Van de school</b>
           {vanSchool.map((d) => <a key={d.id} href={`${basis}/${d.id}`} target="_blank" rel="noreferrer">{d.naam} <small>({grootteTekst(d.grootte)})</small></a>)}
         </div>
       )}
       {eigen.length > 0 ? (
-        <ul className="doc-lijst">
+        <ul className="dc-lijst">
           {eigen.map((d) => (
             <li key={d.id}>
-              <span className="doc-ic" aria-hidden="true">{d.type === "application/pdf" ? "PDF" : d.type.startsWith("image/") ? "IMG" : "DOC"}</span>
-              <span className="doc-t">
+              <span className="dc-ic" aria-hidden="true">{d.type === "application/pdf" ? "PDF" : d.type.startsWith("image/") ? "IMG" : "DOC"}</span>
+              <span className="dc-t">
                 <a href={`${basis}/${d.id}`} target="_blank" rel="noreferrer">{d.naam}</a>
                 <small>{DOC_SOORT_LABEL[d.soort]}{d.door === "school" && d.soort === "ander" ? " (voor de stagegever)" : ""} · {grootteTekst(d.grootte)} · {d.door === "school" ? "door de school" : `door ${d.door_naam || "de stagegever"}`} op {datum(d.op)}</small>
               </span>
@@ -77,7 +77,7 @@ export default function Documenten({ modus, token, dossierId, docs, risico, naam
                 <button type="button" className="bh-btn sm" disabled={bezig} onClick={() => doe(() => documentNagekeken(dossierId!, d.id, !d.nagekeken_op))}>{d.nagekeken_op ? "Terug openzetten" : "In orde"}</button>
               )}
               {(school || !d.nagekeken_op) && (
-                <button type="button" className="doc-weg" disabled={bezig} aria-label={`${d.naam} verwijderen`} onClick={() => doe(() => documentVerwijderen(sleutel, d.id))}>×</button>
+                <button type="button" className="dc-weg" disabled={bezig} aria-label={`${d.naam} verwijderen`} onClick={() => doe(() => documentVerwijderen(sleutel, d.id))}>×</button>
               )}
             </li>
           ))}
@@ -85,7 +85,7 @@ export default function Documenten({ modus, token, dossierId, docs, risico, naam
       ) : (
         <p className={school ? "sm" : "bh-melding"}>{school ? "Nog geen risicoanalyse of werkpostfiche ontvangen." : "Nog niets opgeladen."}</p>
       )}
-      <div className="doc-op">
+      <div className="dc-op">
         <label className="f">Soort
           <select value={soort} onChange={(e) => setSoort(e.target.value as DocSoort)}>
             <option value="risicoanalyse">Risicoanalyse</option>
@@ -93,7 +93,7 @@ export default function Documenten({ modus, token, dossierId, docs, risico, naam
             <option value="ander">{school ? "Blanco werkpostfiche of ander document voor de stagegever" : "Ander document"}</option>
           </select>
         </label>
-        <label className="f doc-bestand">Bestand (pdf, Word of foto, max. 4 MB)
+        <label className="f dc-bestand">Bestand (pdf, Word of foto, max. 4 MB)
           <input ref={bestand} type="file" accept={DOC_ACCEPT} />
         </label>
         {!school && <label className="f">Uw naam<input value={naam} onChange={(e) => setNaam(e.target.value)} autoComplete="name" /></label>}

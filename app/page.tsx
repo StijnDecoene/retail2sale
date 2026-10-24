@@ -139,10 +139,10 @@ export default function Home() {
                 <div><dt>{b1.naam} · {b1.uren} uur</dt><dd>{periode(b1)}</dd></div>
                 <div><dt>{b2.naam} · {b2.uren} uur</dt><dd>{periode(b2)}</dd></div>
               </dl>
-              <a className="download" href="/docs/infobrochure-stage-2026-2027.pdf" download>
+              <a className="download" href="/docs/infobrochure-stage-2026-2027.pdf" target="_blank" rel="noreferrer">
                 <span className="ic"><IcDownload color="#fff" /></span>
                 <span><b>Infobrochure stage 2026-2027</b><small>pdf · 254 kB</small></span>
-                <span className="actie">Downloaden ↓</span>
+                <span className="actie">Openen →</span>
               </a>
             </div>
           </div>
