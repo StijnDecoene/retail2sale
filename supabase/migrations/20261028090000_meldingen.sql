@@ -157,20 +157,6 @@ drop trigger if exists aanvragen_melding on stage.aanvragen;
 create trigger aanvragen_melding after insert or update on stage.aanvragen
   for each row execute function stage.trg_ingediend('aanvraag');
 
--- Begeleider van het dossier mee in rooster_laden (voor de mail bij een afwezigheid).
-create or replace function stage.dossier_begeleider(p_token text, p_dossier uuid)
-returns jsonb language plpgsql stable security definer set search_path = '' as $$
-declare v_d uuid;
-begin
-  select w.dossier into v_d from stage.rooster_wie(p_token, p_dossier) w;
-  if v_d is null then return null; end if;
-  return (select jsonb_build_object('naam', g.naam, 'email', g.email)
-          from stage.dossiers d join stage.begeleiders g on g.id = d.begeleider_id where d.id = v_d);
-end;
-$$;
-
 revoke execute on function stage.meld(uuid, text, text, text), stage.dossier_naam(uuid) from public, anon, authenticated;
-revoke execute on function stage.dossier_begeleider(text, uuid) from public;
-grant execute on function stage.dossier_begeleider(text, uuid) to anon, authenticated, service_role;
 
 notify pgrst, 'reload schema';

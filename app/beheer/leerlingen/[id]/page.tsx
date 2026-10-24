@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Formulier, { ActieKnop } from "@/components/beheer/Formulier";
 import { dossierBewaren, leerlingBewaren, leerlingVerwijderen } from "../../acties";
-import { serverClient, type Begeleider } from "@/lib/supabase/server";
+import { serverClient } from "@/lib/supabase/server";
 import { KLASSEN, LEERLING_STATUS, datumKort, doetMee, vandaagIso, volledigeNaam, type Blok, type Dossier, type Leerling } from "@/lib/beheer";
 import { tijdensVoorDossiers } from "@/lib/tijdens-beheer";
 import { standTekst } from "@/lib/tijdens";
@@ -16,16 +16,14 @@ export default async function LeerlingFiche({ params }: { params: Promise<{ id: 
   if (!l) notFound();
   const leerling = l as Leerling;
 
-  const [bR, dR, pR, gR] = await Promise.all([
+  const [bR, dR, pR] = await Promise.all([
     sb.from("blokken").select("*").eq("schooljaar", leerling.schooljaar).order("start_datum"),
     sb.from("dossiers").select("*").eq("leerling_id", id),
     sb.from("stageplaatsen").select("id, naam, gemeente, status").order("naam"),
-    sb.from("begeleiders").select("id, naam, actief").order("naam"),
   ]);
   const blokken = (bR.data ?? []) as Blok[];
   const dossiers = new Map(((dR.data ?? []) as Dossier[]).map((d) => [d.blok_id, d]));
   const plaatsen = (pR.data ?? []) as { id: string; naam: string; gemeente: string | null; status: string }[];
-  const begeleiders = (gR.data ?? []) as Pick<Begeleider, "id" | "naam" | "actief">[];
   // Afwezigheden en inhaalstage per blokstage (korte samenvatting).
   const tijdens = new Map(await Promise.all(blokken.filter((b) => dossiers.has(b.id)).map(async (b) => {
     const d = dossiers.get(b.id)!;
@@ -111,12 +109,6 @@ export default async function LeerlingFiche({ params }: { params: Promise<{ id: 
                             {p.naam}{p.gemeente ? ` (${p.gemeente})` : ""}{p.status !== "actief" ? " – werkt niet mee" : ""}
                           </option>
                         ))}
-                      </select>
-                    </label>
-                    <label className="f">Begeleider
-                      <select name="begeleider_id" defaultValue={d?.begeleider_id ?? ""}>
-                        <option value="">Nog niet toegewezen</option>
-                        {begeleiders.filter((g) => g.actief || g.id === d?.begeleider_id).map((g) => <option key={g.id} value={g.id}>{g.naam}</option>)}
                       </select>
                     </label>
                     <label className="f">Mentor<input name="mentor_naam" defaultValue={d?.mentor_naam ?? ""} /></label>

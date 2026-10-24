@@ -49,24 +49,22 @@ export async function roosterGoedgekeurdMailen(c: RoosterContext, aan: string[],
   return true;
 }
 
-/** Meteen bij een gemelde afwezigheid: mail naar de stagebegeleiding (begeleider van de leerling in kopie). */
+/** Meteen bij een gemelde afwezigheid: mail naar de stagebegeleiding (retail2sale@snh.be). */
 export async function afwezigheidMailen(
   c: RoosterContext,
   a: { datum: string; soort: "hele" | "deel"; aan?: string; ver?: string; gemist_min: number; reden: string; opm?: string; naam: string },
   door: string,
-  begeleider: { naam: string; email: string } | null,
 ) {
   if (!mailIngesteld()) return;
   const site = await siteAdres();
   const d = new Date(`${a.datum}T00:00:00Z`).toLocaleDateString("nl-BE", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
   await verstuurMail({
     aan: [SCHOOL_CONTRACT.stagemail],
-    cc: begeleider?.email && begeleider.email !== SCHOOL_CONTRACT.stagemail ? [begeleider.email] : [],
     onderwerp: `Afwezigheid ${naam(c)} op ${d}`,
     html: mailHtml(site, {
       eyebrow: `${c.blok.naam} · afwezigheid`,
       titel: "Afwezigheid gemeld",
-      aanspreking: begeleider ? `Beste ${begeleider.naam.split(" ")[0]}` : "Beste stagebegeleider",
+      aanspreking: "Beste stagebegeleiders",
       alineas: [
         `${a.naam} (${door}) meldt dat ${naam(c)} (${c.leerling.klas}) bij ${c.stagegever.winkel ?? "de stageplaats"} afwezig is op ${d}.`,
         `${a.soort === "hele" ? "Hele dag" : `Te laat of vroeger weg${a.aan ? `, aangekomen om ${a.aan}` : ""}${a.ver ? `, vertrokken om ${a.ver}` : ""}`} · ${uren(a.gemist_min)} gemist · reden: ${a.reden}${a.opm ? ` (${a.opm})` : ""}.`,
