@@ -6,6 +6,8 @@ import ContractTekst from "@/components/contract/ContractTekst";
 import Handtekening from "@/components/contract/Handtekening";
 import Ondertekening from "@/components/contract/Ondertekening";
 import { Veld, Vink } from "@/app/portaal/Velden";
+import ActiviteitenKiezer from "@/components/contract/ActiviteitenKiezer";
+import { MIN_ACTIVITEITEN } from "@/lib/activiteiten";
 import { HOEDANIGHEDEN, adresSplits, effectief, getekend, magTekenen, type ContractData, type ContractGegevens, type Rol, type Sectie } from "@/lib/contract";
 import { contractBewaren, contractOndertekenen, type ContractResultaat } from "./acties";
 
@@ -107,6 +109,7 @@ function Gegevens({ d, token, verder }: { d: ContractData; token: string; verder
   if (!g.ondertekenaar?.trim()) verplicht.ondertekenaar = "Vul de naam in van wie ondertekent.";
   if (!g.hoedanigheid?.trim()) verplicht.hoedanigheid = "Kies de hoedanigheid.";
   if (!g.mentor?.trim()) verplicht.mentor = "Vul de naam van de mentor in.";
+  if ((g.activiteiten?.length ?? 0) < MIN_ACTIVITEITEN) verplicht.activiteiten = `Duid minstens ${MIN_ACTIVITEITEN} activiteiten aan.`;
 
   function bewaar() {
     if (Object.keys(verplicht).length) { setRes({ fout: "Vul de verplichte velden in.", velden: verplicht }); return; }
@@ -161,6 +164,10 @@ function Gegevens({ d, token, verder }: { d: ContractData; token: string; verder
             </button>
           ))}
         </div>
+      </div>
+      <div className="ct-groep">
+        <h3>Activiteitenlijst *</h3>
+        <ActiviteitenKiezer catalogus={d.catalogus ?? []} stage={d.aanvraag?.bedrijf?.soort} waarde={g.activiteiten ?? []} zet={(x) => setG((y) => ({ ...y, activiteiten: x }))} fout={f.activiteiten} />
       </div>
       <div className="ct-groep">
         <h3>Bijzondere afspraken</h3>

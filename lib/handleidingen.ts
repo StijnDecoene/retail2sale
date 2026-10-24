@@ -70,6 +70,7 @@ export const HANDLEIDINGEN: Record<Wie, HandleidingInhoud> = {
           "**Paritair comité** en **RSZ-kengetal**: vraag ze na bij uw boekhouder of sociaal secretariaat als u ze niet kent. Ze zijn niet verplicht.",
           "**Mentor** op de werkvloer, met gsm-nummer. De naam is verplicht.",
           "**Risicoanalyse**: duid aan of u een risicoanalyse of werkpostfiche hebt (die bezorgt u vóór de start), of dat u geen werknemers hebt (dan stuurt de school u een werkpostfiche).",
+          "**Activiteitenlijst**: wat de stagiair bij u effectief zal doen. De school stelt een lijst voor die past bij de stage (sales of onthaal). Vink af wat niet van toepassing is, voeg eigen activiteiten toe en duid aan wat enkel **onder rechtstreeks toezicht** mag (bijvoorbeeld de kassa). Minstens vijf activiteiten. De lijst komt als bijlage bij het contract.",
           "**Bijzondere afspraken**: toestellen of taken die de stagiair niet mag gebruiken of doen, en andere afspraken zoals kledij of pauzes.",
         ],
         tip: "Klik op Bewaren en verder. Zolang u niet getekend hebt, kan u de gegevens nog aanpassen.",
@@ -121,7 +122,7 @@ export const HANDLEIDINGEN: Record<Wie, HandleidingInhoud> = {
         wanneer: "Na de stage",
         tekst: [
           "Op het tabblad **Afronding** vragen we u in twee minuten hoe de samenwerking verliep en of u volgend schooljaar opnieuw een stagiair wil ontvangen. De stagiair ziet uw antwoorden niet.",
-          "Zijn de uren, de evaluaties en het stageverslag in orde, dan rondt de school de stage af. De stagiair krijgt een stageattest; u krijgt een bedankmail met een kopie.",
+          "Zijn de uren en de evaluaties in orde, dan rondt de school de stage af. De stagiair krijgt een stageattest; u krijgt een bedankmail met een kopie.",
         ],
       },
       {
@@ -135,6 +136,7 @@ export const HANDLEIDINGEN: Record<Wie, HandleidingInhoud> = {
     vragen: [
       { v: "De link werkt niet of ik ben hem kwijt.", a: "Ga naar [Inloggen → Stagegever](/inloggen?rol=stagegever) en vul uw mailadres in: u krijgt uw links opnieuw. Lukt dat niet, mail dan naar retail2sale@snh.be." },
       { v: "De mentor is iemand anders dan wie het contract tekent.", a: "Geef de link door aan de mentor voor het werkrooster, de afwezigheden en de evaluatie. Voor de mentor is er ook een korte [briefing voor de mentor](/handleiding/mentor)." },
+      { v: "Wat is de activiteitenlijst?", a: "Een verplicht onderdeel van de stageovereenkomst: de activiteiten die de stagiair tijdens de stage effectief uitvoert. Het is geen evaluatie. De lijst beschermt u en de stagiair: activiteiten die er niet op staan, vragen extra aandacht in uw risicoanalyse. Moet er tijdens de stage iets bij, laat het de stagebegeleiding weten." },
       { v: "Iemand anders moet tekenen dan de mentor.", a: "Dat kan. Vul bij **Naam ondertekenaar** de naam in van wie tekent, en geef de link aan die persoon. U kan ook de stagebegeleiding vragen om de link rechtstreeks naar die persoon te mailen." },
       { v: "Ik heb mij vergist na het tekenen.", a: "Mail naar retail2sale@snh.be. De stagebegeleiding past het contract aan; u hoeft niet opnieuw te tekenen." },
       { v: "Waarom tekent een ouder mee?", a: "Een minderjarige stagiair wordt vertegenwoordigd door een ouder of voogd. Is de stagiair op de eerste stagedag 18 jaar of ouder, dan tekent de stagiair zelf en is er geen handtekening van een ouder nodig." },
@@ -157,7 +159,7 @@ export const HANDLEIDINGEN: Record<Wie, HandleidingInhoud> = {
       "Je gaat langs, stelt je voor en vult samen met de stagementor de aanvraag in.",
       "Na goedkeuring krijg je een bevestiging. De stagegever tekent het contract, daarna teken jij (en een ouder als je jonger bent dan 18).",
       "Je plant samen met de stagegever je werkrooster op het platform. Dan kan de stage beginnen.",
-      "Na de stage vul je je zelfevaluatie en je stageverslag in. Daarna krijg je je evaluatie en je stageattest.",
+      "Na de stage vul je je zelfevaluatie in. Daarna krijg je je evaluatie en je stageattest.",
     ],
     stappen: [
       {
@@ -239,13 +241,12 @@ export const HANDLEIDINGEN: Record<Wie, HandleidingInhoud> = {
         ],
       },
       {
-        titel: "Afronding: stageverslag en attest",
+        titel: "Afronding: je stageattest",
         wanneer: "Na de stage",
         tekst: [
-          "In Mijn stage, bij **Afronding**, schrijf je je **stageverslag**: je stelt je stageplaats voor, beschrijft je taken en één situatie uit de praktijk, en vertelt wat je meeneemt. Schrijf in volzinnen en geef voorbeelden.",
-          "Zijn je uren, je evaluatie en je verslag in orde, dan rondt de stagebegeleiding je stage af. Je krijgt een **stageattest** met je stageplaats, de periode en je gepresteerde uren. Je kan het downloaden bij Afronding en je krijgt het per mail.",
+          "Zijn je uren en je evaluatie in orde, dan rondt de stagebegeleiding je stage af. Je krijgt een **stageattest** met je stageplaats, de periode en je gepresteerde uren. Je kan het downloaden in Mijn stage bij **Afronding** en je krijgt het per mail.",
         ],
-        tip: "Bewaar je attest: het is handig bij een sollicitatie of voor je portfolio.",
+        tip: "Bewaar je attest: het is handig bij een sollicitatie.",
       },
     ],
     vragen: [
@@ -281,7 +282,7 @@ export const HANDLEIDINGEN: Record<Wie, HandleidingInhoud> = {
           "**Onthaal en organisatie**: bezoekers onthalen en doorverwijzen, telefoon en mails behandelen, afspraken en agenda's beheren, administratieve taken, vergaderingen of activiteiten voorbereiden.",
           "**Altijd**: stiptheid, verzorgd voorkomen, beleefdheid, initiatief nemen, samenwerken en openstaan voor feedback.",
         ],
-        tip: "Geef liefst gevarieerde taken met echt klantcontact. Dat is waar de stagiair het meest uit leert.",
+        tip: "Wat de stagiair bij u precies doet, staat in de activiteitenlijst bij het contract. Activiteiten met 'onder rechtstreeks toezicht' gebeuren enkel als u of een ervaren collega erbij is. Geef liefst gevarieerde taken met echt klantcontact: daar leert de stagiair het meest van.",
       },
       {
         titel: "Vóór de start: het werkrooster",
@@ -378,7 +379,7 @@ export const HANDLEIDINGEN: Record<Wie, HandleidingInhoud> = {
       {
         titel: "Evaluatie en afronding",
         wanneer: "Na de stage",
-        tekst: ["De mentor en de stagebegeleiding evalueren de stage; uw kind vult een zelfevaluatie en een stageverslag in. Zodra de school de evaluatie openstelt, ziet uw kind ze in het portaal en per mail. Na de afronding krijgt uw kind een stageattest met de gepresteerde uren."],
+        tekst: ["De mentor en de stagebegeleiding evalueren de stage; uw kind vult een zelfevaluatie in. Zodra de school de evaluatie openstelt, ziet uw kind ze in het portaal en per mail. Na de afronding krijgt uw kind een stageattest met de gepresteerde uren."],
         tip: "Vraag gerust aan uw kind om de evaluatie samen te bekijken: het is een mooie kans om over de toekomst te praten.",
       },
     ],

@@ -90,7 +90,6 @@ export default async function Portaal({ searchParams }: { searchParams: Zoek }) 
   const stap = (tijdens ? "tijdens" : evalStap ? "evaluatie" : afStap ? "afronding" : STAPPEN.some((s) => s.k === zp.stap) ? zp.stap : eersteOpen) as StapKey | "tijdens" | "evaluatie" | "afronding";
   const ev = d.rooster ? await laadEvaluatie(sb, { dossier: d.dossier.id }) : null;
   const zelf = ev?.evaluaties.find((e) => e.soort === "zelf");
-  const verslag = ev?.evaluaties.find((e) => e.soort === "verslag");
   const t = d.rooster ? await laadTijdens(sb, { dossier: d.dossier.id }) : null;
   const vandaag = vandaagIso();
   const tst = t && d.rooster ? stand(t, d.rooster.blok, vandaag) : null;
@@ -160,7 +159,7 @@ export default async function Portaal({ searchParams }: { searchParams: Zoek }) 
       {ev && (
         <Link href={link({ blok: blok.id, stap: "afronding" })} className={`pt-tijdens${stap === "afronding" ? " on" : ""}`} aria-current={stap === "afronding" ? "page" : undefined}>
           <b>Afronding</b>
-          <small>{ev.afronding ? "Je stage is afgerond: download je stageattest" : verslag?.status === "ingediend" ? "Stageverslag ingediend" : verslag ? "Stageverslag: concept" : "Schrijf na de stage je stageverslag"}</small>
+          <small>{ev.afronding ? "Je stage is afgerond: download je stageattest" : "Na de stage krijg je hier je stageattest"}</small>
           {ev.afronding && <span className="pill ok">Attest</span>}
         </Link>
       )}
@@ -316,26 +315,17 @@ export default async function Portaal({ searchParams }: { searchParams: Zoek }) 
         <section className="pt-paneel">
           <div className="pt-paneel-kop">
             <h2>Afronding</h2>
-            <p>Na de stage schrijf je je stageverslag. Zijn je uren, je evaluatie en je verslag in orde, dan rondt de stagebegeleiding je stage af en krijg je je stageattest.</p>
+            <p>Zijn je uren en je evaluatie in orde, dan rondt de stagebegeleiding je stage af en krijg je je stageattest.</p>
           </div>
           {ev.afronding ? (
             <div className="pt-feedback ok">
               <b>Je stage is afgerond</b>
-              <p>Je stageattest vermeldt je stageplaats, de periode en je gepresteerde uren. Bewaar het goed: je kan het gebruiken bij een sollicitatie of voor je portfolio.</p>
+              <p>Je stageattest vermeldt je stageplaats, de periode en je gepresteerde uren. Bewaar het goed: je kan het gebruiken bij een sollicitatie.</p>
               <p className="pt-knoppen"><a className="btn btn-blue" href={`/portaal/attest?dossier=${d.dossier.id}`} target="_blank" rel="noreferrer">Stageattest downloaden</a></p>
             </div>
           ) : (
             <p className="bh-melding">Je attest verschijnt hier zodra de stagebegeleiding je stage heeft afgerond.</p>
           )}
-          <h3 className="pt-sub">Je stageverslag</h3>
-          <EvaluatieForm
-            key={verslag?.gewijzigd_op ?? "nieuw"}
-            f={formulier("verslag", ev.stage)}
-            start={verslag?.antwoorden ?? {}}
-            ingediend={verslag?.status === "ingediend"}
-            naamStart={`${leerling.voornaam} ${leerling.naam}`}
-            sleutel={{ dossier: d.dossier.id }}
-          />
         </section>
       )}
 

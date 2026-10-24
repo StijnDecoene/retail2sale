@@ -32,6 +32,7 @@ export default async function Instellingen() {
           <h1>Instellingen</h1>
           <p className="sub">Begeleiders, blokstages en uitzonderingen · schooljaar {sj}</p>
         </div>
+        <a className="bh-btn" href="/beheer/instellingen/activiteiten">Activiteitenlijst</a>
       </header>
 
       <section className="bh-card">

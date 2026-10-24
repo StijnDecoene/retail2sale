@@ -1008,3 +1008,32 @@ button.bh-kpi { font: inherit; text-align: left; cursor: pointer; color: inherit
 .hl-andere span { color: #5a6578; }
 .hl-andere a { padding: 6px 12px; border-radius: 999px; background: #eaf1fb; color: #1d5baa; font-weight: 600; text-decoration: none; }
 @media (max-width: 640px) { .hl-rollen { grid-template-columns: 1fr; } }
+
+/* Activiteitenlijst */
+.act { display: grid; gap: 12px; }
+.act-groep h4 { margin: 6px 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #5a6578; }
+.act-groep ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.act-groep li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid #e3e7ee; border-radius: 10px; background: #fff; }
+.act-groep li.on { border-color: #b9cde9; background: #f5f9ff; }
+.act-vink { display: flex; align-items: flex-start; gap: 10px; flex: 1; cursor: pointer; font-size: 14px; line-height: 1.4; }
+.act-vink input { width: 18px; height: 18px; margin-top: 1px; flex: none; accent-color: #1d5baa; }
+.act-vink small { color: #5a6578; font-size: 12px; margin-left: 6px; white-space: nowrap; }
+.act-tz { flex: none; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; border: 1px solid #e3e7ee; background: #fff; color: #5a6578; cursor: pointer; }
+.act-tz.on { background: #fff4e0; border-color: #e2a33a; color: #8a5300; }
+.act-weg { flex: none; border: 0; background: transparent; font-size: 20px; line-height: 1; color: #a11a27; cursor: pointer; padding: 0 4px; }
+.act-nieuw { display: flex; gap: 8px; margin-top: 6px; }
+.act-nieuw input { flex: 1; min-width: 0; }
+.act-andere summary { cursor: pointer; font-weight: 600; color: #1d5baa; font-size: 14px; margin: 4px 0; }
+.act-teller { font-size: 13px; color: #1e7a4f; font-weight: 600; margin: 0; }
+.act-teller.te-weinig { color: #a11a27; }
+@media (max-width: 560px) { .act-groep li { flex-wrap: wrap; } .act-tz { margin-left: 28px; } }
+.act-tabel input[type="text"], .act-tabel input:not([type]) { width: 100%; padding: 6px 8px; border: 1px solid #e3e7ee; border-radius: 6px; font: inherit; font-size: 13px; }
+.act-tabel input.act-groep-in { width: 170px; }
+.act-tabel input.act-tekst-in { min-width: 380px; }
+.act-tabel input.act-lpd-in { width: 64px; }
+.act-tabel td:nth-child(3) { width: 100%; }
+.act-tabel td.c { text-align: center; }
+.act-tabel tr.uit td { opacity: .5; }
+.act-pijlen { white-space: nowrap; }
+.act-pijlen button { border: 0; background: transparent; cursor: pointer; color: #5a6578; padding: 0 3px; }
+.act-bewaar { position: sticky; bottom: 0; z-index: 5; }

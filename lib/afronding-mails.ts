@@ -15,7 +15,7 @@ export async function attestMailen(site: string, a: AttestGegevens, email: strin
       aanspreking: `Dag ${a.leerling.voornaam}`,
       alineas: [
         `Je stage bij ${a.winkel || "je stageplaats"} is afgerond. In bijlage vind je je stageattest met ${a.u.gepresteerd ? `${Math.round(a.u.gepresteerd / 60)} gepresteerde uren` : "de gegevens van je stage"}.`,
-        "Bewaar het attest goed: je kan het later gebruiken bij een sollicitatie of voor je portfolio. Je vindt het ook terug in het portaal bij Mijn stage.",
+        "Bewaar het attest goed: je kan het later gebruiken bij een sollicitatie. Je vindt het ook terug in het portaal bij Mijn stage.",
       ],
       knop: { tekst: "Naar Mijn stage", url: `${site}/portaal?stap=afronding` },
     }),

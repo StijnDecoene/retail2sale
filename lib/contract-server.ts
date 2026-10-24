@@ -3,6 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { headers } from "next/headers";
 import type { serverClient } from "@/lib/supabase/server";
 import type { AanvraagGegevens } from "@/lib/portaal";
+import type { Activiteit } from "@/lib/activiteiten";
 import { contractPlat, isMeerderjarig, type ContractData, type ContractGegevens, type Partij, type Rol } from "@/lib/contract";
 
 type Sb = Awaited<ReturnType<typeof serverClient>>;
@@ -16,12 +17,20 @@ export async function bezoeker() {
   return { ip, browser: h.get("user-agent") };
 }
 
+/** Schooleigen activiteitenlijst (actieve activiteiten). Leeg als de tabel nog niet bestaat. */
+export async function laadCatalogus(sb: Sb, ookInactief = false): Promise<Activiteit[]> {
+  let q = sb.from("activiteiten").select("*").order("volgorde");
+  if (!ookInactief) q = q.eq("actief", true);
+  const { data, error } = await q;
+  return error ? [] : ((data ?? []) as Activiteit[]);
+}
+
 /** Contract zoals de partij met deze link het ziet (zonder login). */
 export async function contractViaLink(sb: Sb, token: string): Promise<(ContractData & { rol: Rol }) | null> {
   if (!token || token.length < 30) return null;
   const { data, error } = await sb.rpc("contract_via_link", { p_token: token });
   if (error || !data) return null;
-  return data as ContractData & { rol: Rol };
+  return { ...(data as ContractData & { rol: Rol }), catalogus: await laadCatalogus(sb) };
 }
 
 export type PartijBeheer = Partij & { token: string | null; email: string | null; uitgenodigd_op: string | null; geopend_op: string | null; ip: string | null };
@@ -31,7 +40,7 @@ export async function contractBeheer(sb: Sb, dossierId: string): Promise<(Contra
   const { data: c } = await sb.from("contracten").select("*").eq("dossier_id", dossierId).maybeSingle();
   if (!c) return null;
   const { data: d } = await sb.from("dossiers").select("id, leerling_id, blok_id").eq("id", dossierId).single();
-  const [lR, bR, uR, aR, gR, pR, logR] = await Promise.all([
+  const [lR, bR, uR, aR, gR, pR, logR, catalogus] = await Promise.all([
     sb.from("leerlingen").select("voornaam, naam, klas, email, gsm").eq("id", d!.leerling_id).single(),
     sb.from("blokken").select("naam, code, schooljaar, start_datum, eind_datum, uren, uren_per_week").eq("id", d!.blok_id).single(),
     sb.from("uitzonderingen").select("van, tot, naam, soort").eq("blok_id", d!.blok_id).order("van"),
@@ -39,6 +48,7 @@ export async function contractBeheer(sb: Sb, dossierId: string): Promise<(Contra
     sb.from("begeleiders").select("naam, telefoon, email, rol").eq("actief", true).order("naam"),
     sb.from("contract_partijen").select("*").eq("dossier_id", dossierId),
     sb.from("contract_log").select("op, wie, wat").eq("dossier_id", dossierId).order("op", { ascending: false }).limit(50),
+    laadCatalogus(sb),
   ]);
   const partijen = (pR.data ?? []) as PartijBeheer[];
   return {
@@ -51,6 +61,7 @@ export async function contractBeheer(sb: Sb, dossierId: string): Promise<(Contra
     contract: { gegevens: (c.gegevens ?? {}) as ContractGegevens, meerderjarig: c.meerderjarig, afgerond_op: c.afgerond_op },
     partijen,
     partijenBeheer: partijen,
+    catalogus,
     log: logR.data ?? [],
   };
 }

@@ -6,7 +6,7 @@ import { afrondingVoorDossiers, attestBasis } from "@/lib/afronding-server";
 import { datumMidden } from "@/lib/contract";
 import AfrondingKnoppen from "./AfrondingKnoppen";
 
-/** Afronding in het dossier: controlelijst, verslag, feedback, attest en afronden. */
+/** Afronding in het dossier: controlelijst, feedback, attest en afronden. */
 export default async function AfrondingKaart({ sb, dossierId }: { sb: Awaited<ReturnType<typeof serverClient>>; dossierId: string }) {
   const b = await attestBasis(sb, dossierId);
   if (!b) return null;
@@ -29,7 +29,6 @@ export default async function AfrondingKaart({ sb, dossierId }: { sb: Awaited<Re
               <span className="af-ic" aria-hidden="true">{c.ok ? "✓" : c.nodig ? "!" : "·"}</span>
               <b>{c.label}</b>
               {c.detail && <small>{c.detail}</small>}
-              {c.k === "verslag" && <Link className="bh-link" href={`/beheer/dossiers/${dossierId}/evaluatie?soort=verslag`}>{c.ok ? "Lezen" : "Bekijken"}</Link>}
               {c.k === "feedback" && c.ok && <Link className="bh-link" href={`/beheer/dossiers/${dossierId}/evaluatie?soort=feedback`}>Lezen</Link>}
             </li>
           ))}

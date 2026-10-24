@@ -33,7 +33,7 @@ export default async function AfrondingPagina({ searchParams }: { searchParams: 
     return {
       dossier_id: d.id, naam: volledigeNaam(l), klas: l.klas, plaats: plaatsen.get(d.stageplaats_id!) ?? "",
       uren: `${uren(st.u.gepresteerd)} / ${uren(st.u.vereist)}`, urenOk: c("uren"),
-      rooster: c("rooster"), afw: c("afw"), eval: c("eval"), verslag: c("verslag"), feedback: c("feedback"),
+      rooster: c("rooster"), afw: c("afw"), eval: c("eval"), feedback: c("feedback"),
       klaar: klaar(st.checks), afgerond: st.afronding ? st.afronding.afgerond_op.slice(0, 10).split("-").reverse().join("/") : null, code: st.afronding?.attest_code ?? null,
     };
   }).sort((a, b) => a.klas.localeCompare(b.klas) || a.naam.localeCompare(b.naam));
@@ -43,7 +43,7 @@ export default async function AfrondingPagina({ searchParams }: { searchParams: 
       <header className="bh-top">
         <div>
           <h1>Afronding</h1>
-          <p className="sub">{blok.naam} · uren, evaluatie, stageverslag en feedback · stageattest en bedankmail</p>
+          <p className="sub">{blok.naam} · uren, evaluatie en feedback · stageattest en bedankmail</p>
         </div>
         {blokken.length > 1 && (
           <nav className="bh-seg" aria-label="Blokstage">{blokken.map((b) => <Link key={b.id} href={`/beheer/afronding?blok=${b.id}`} className={b.id === blok.id ? "on" : undefined}>{b.naam}</Link>)}</nav>

@@ -2,6 +2,7 @@
 // Geen server-only code: wordt ook in de contractpagina in de browser gebruikt.
 import type { AanvraagGegevens } from "@/lib/portaal";
 import { leeftijdOp } from "@/lib/portaal";
+import { MIN_ACTIVITEITEN, perGroep, voorstel, type ActItem, type Activiteit } from "@/lib/activiteiten";
 
 export type Rol = "stagegever" | "stagiair" | "ouder" | "directie";
 export const ROLLEN: Rol[] = ["stagegever", "stagiair", "ouder", "directie"];
@@ -24,6 +25,8 @@ export type ContractGegevens = {
   toestellen?: string;
   afspraken?: string;
   stagiair_adres?: string;
+  /** individuele activiteitenlijst (bijlage bij de overeenkomst) */
+  activiteiten?: ActItem[];
 };
 
 export type Partij = {
@@ -44,6 +47,8 @@ export type ContractData = {
   team: { naam: string; telefoon: string | null; email: string }[];
   contract: { gegevens: ContractGegevens; meerderjarig: boolean; afgerond_op: string | null };
   partijen: Partij[];
+  /** schooleigen activiteitenlijst (actieve activiteiten), voor het voorstel */
+  catalogus?: Activiteit[];
 };
 
 export const SCHOOL_CONTRACT = {
@@ -68,7 +73,7 @@ export function isMeerderjarig(geboortedatum: string | undefined, start: string)
 }
 
 /** Beginwaarden uit de aanvraag; de aanvullingen gaan voor. */
-export function effectief(d: Pick<ContractData, "aanvraag" | "contract">): Required<ContractGegevens> {
+export function effectief(d: Pick<ContractData, "aanvraag" | "contract"> & { catalogus?: Activiteit[] }): Required<ContractGegevens> {
   const a = d.aanvraag ?? {}, b = a.bedrijf ?? {}, m = a.mentor ?? {}, v = a.verantwoordelijke ?? {};
   const basis: Required<ContractGegevens> = {
     ondertekenaar: v.zelfde === false && v.naam ? v.naam : m.naam ?? "",
@@ -86,12 +91,15 @@ export function effectief(d: Pick<ContractData, "aanvraag" | "contract">): Requi
     toestellen: "",
     afspraken: "",
     stagiair_adres: "",
+    activiteiten: voorstel(d.catalogus ?? [], b.soort),
   };
   const g = d.contract?.gegevens ?? {};
   const uit = { ...basis };
+  if (Array.isArray(g.activiteiten) && g.activiteiten.length) uit.activiteiten = g.activiteiten;
   for (const k of Object.keys(basis) as (keyof ContractGegevens)[]) {
+    if (k === "activiteiten") continue;
     const w = g[k];
-    if (w !== undefined && w !== null && String(w) !== "") (uit as Record<string, string>)[k] = String(w);
+    if (w !== undefined && w !== null && String(w) !== "") (uit as unknown as Record<string, string>)[k] = String(w);
   }
   return uit;
 }
@@ -118,6 +126,7 @@ export function gegevensFouten(g: Required<ContractGegevens>): Record<string, st
   if (!g.ondertekenaar.trim()) f.ondertekenaar = "Vul de naam in van wie ondertekent.";
   if (!g.hoedanigheid.trim()) f.hoedanigheid = "Kies de hoedanigheid.";
   if (!g.mentor.trim()) f.mentor = "Vul de naam van de mentor in.";
+  if (g.activiteiten.length < MIN_ACTIVITEITEN) f.activiteiten = `Duid minstens ${MIN_ACTIVITEITEN} activiteiten aan.`;
   return f;
 }
 
@@ -216,9 +225,11 @@ export function contractTekst(d: ContractData): Sectie[] {
       h("Artikel 8"),
       p(`Deze overeenkomst wordt digitaal ondertekend door ${mj ? "de stagegever, de stagiair en de directeur" : "de stagegever, de stagiair, de ouder of voogd en de directeur"}. Een digitale handtekening heeft dezelfde waarde als een handtekening op papier. Elke partij ontvangt digitaal een exemplaar van de ondertekende overeenkomst; een papieren versie is niet nodig.`),
       h("Bijzondere voorwaarden"),
+      p("De activiteiten die de stagiair tijdens de stage uitvoert, staan in de activiteitenlijst hieronder. Ze houden rekening met de opleiding en met de fysieke en psychische maturiteit van de stagiair, en worden veilig uitgevoerd op basis van de risicoanalyse. Activiteiten met de vermelding ", { b: "onder rechtstreeks toezicht" }, " voert de stagiair enkel uit in aanwezigheid van de mentor of een ervaren collega."),
       p("Niet toegelaten toestellen of taken: ", v(g.toestellen, "geen")),
       p("Andere afspraken: ", v(g.afspraken, "geen")),
     ] },
+    { id: "activiteiten", titel: "Activiteitenlijst", blokken: activiteitenBlokken(d, g.activiteiten) },
     { id: "reglement", titel: "Stagereglement", blokken: [
       h("Artikel 1"), p("Dit reglement geldt voor alle leerlingen van het voltijds secundair onderwijs die een stage volbrengen in het kader van hun opleiding, voor de directeurs van deze scholen en voor de stagegevers."),
       h("Artikel 2"), p("De stagiair blijft onder het gezag van de directeur of zijn afgevaardigde."),
@@ -256,7 +267,7 @@ export function contractTekst(d: ContractData): Sectie[] {
       h("Begeleiding"),
       p("De directe werkbegeleiding gebeurt door de stagegever samen met de stagebegeleiders; de methodische begeleiding vooral door de stagebegeleiders."),
       h("Evaluatiemomenten"),
-      lijst("evaluatiebezoek(en) door de stagebegeleiding;", "evaluatie door de winkelier op het einde van de stageperiode;", "stageportfolio door de stagiair."),
+      lijst("evaluatiebezoek(en) door de stagebegeleiding;", "evaluatie door de winkelier op het einde van de stageperiode;", "zelfevaluatie door de stagiair."),
     ] },
     { id: "gedragscode", titel: "Gedragscode stagiair", inklapbaar: true, blokken: [
       lijst(
@@ -269,6 +280,20 @@ export function contractTekst(d: ContractData): Sectie[] {
       ),
     ] },
   ];
+}
+
+/** Bijlage: de individuele activiteitenlijst, per groep. */
+function activiteitenBlokken(d: ContractData, items: ActItem[]): TekstBlok[] {
+  const bevestigd = Array.isArray(d.contract.gegevens.activiteiten) && d.contract.gegevens.activiteiten.length > 0;
+  const uit: TekstBlok[] = [
+    p("Opgesteld door de stagebegeleiding en de stagegever, voor ", { b: `${d.leerling.voornaam} ${d.leerling.naam}` }, ". Tussen haakjes: de leerplandoelen (LPD) van Onthaal, organisatie en sales waar de activiteit bij aansluit. De stage is gericht op leren, niet op productie."),
+  ];
+  if (!bevestigd) uit.push({ t: "note", d: [v("", "Voorstel van de school: de stagegever kijkt de lijst na en vult ze aan bij het invullen van de gegevens.")] });
+  for (const [groep, lijstItems] of perGroep(items)) {
+    uit.push(h(groep));
+    uit.push({ t: "ul", items: lijstItems.map((i) => [i.tekst + (i.lpd ? ` (LPD ${i.lpd})` : ""), ...(i.toezicht ? [" — ", { b: "onder rechtstreeks toezicht" }] as Deel[] : [])]) });
+  }
+  return uit;
 }
 
 /** Platte tekst van het contract (voor de vingerafdruk bij het ondertekenen). */

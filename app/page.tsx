@@ -14,7 +14,7 @@ const STAPPEN = [
   { t: "Werkrooster", s: "120 uur, gemiddeld 20 à 24 uur per week, samen gepland.", wie: "Stagegever · stagiair" },
   { t: "Tijdens de stage", s: "Afwezigheid melden en inhaaluren inplannen.", wie: "Stagegever · stagiair" },
   { t: "Evaluatie", s: "Mentor, begeleider en stagiair evalueren elk hun deel.", wie: "Alle rollen" },
-  { t: "Afronding", s: "Stageverslag in het Portfolio op Smartschool.", wie: "Stagiair" },
+  { t: "Afronding", s: "Feedback van de stagegever en een stageattest voor de stagiair.", wie: "Stagiair" },
 ];
 
 export default function Home() {
