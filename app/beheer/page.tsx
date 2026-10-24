@@ -35,11 +35,10 @@ export default async function Overzicht() {
     const { data } = await sb.from("dossiers").select("*").eq("blok_id", blok.id);
     dossiers = (data ?? []) as Dossier[];
   }
-  // Enkel leerlingen van klassen die aan deze blokstage meedoen, tellen voor stageplaats en begeleider.
+  // Enkel leerlingen van klassen die aan deze blokstage meedoen, tellen voor de stageplaats.
   const inBlok = actief.filter((l) => doetMee(blok, l.klas));
   const actiefIds = new Set(inBlok.map((l) => l.id));
   const metPlaats = dossiers.filter((d) => d.stageplaats_id && actiefIds.has(d.leerling_id)).length;
-  const metBegeleider = dossiers.filter((d) => d.begeleider_id && actiefIds.has(d.leerling_id)).length;
 
   const perKlas = new Map<string, number>();
   actief.forEach((l) => perKlas.set(l.klas, (perKlas.get(l.klas) ?? 0) + 1));
@@ -78,11 +77,6 @@ export default async function Overzicht() {
           <span className="l">Stageplaats gekend{blok ? ` · ${blok.naam}` : ""}</span>
           <span className="v">{metPlaats} <small>/ {inBlok.length}</small></span>
           <span className="meter"><i style={{ width: `${inBlok.length ? (metPlaats / inBlok.length) * 100 : 0}%` }} /></span>
-        </Link>
-        <Link href="/beheer/leerlingen" className="bh-kpi">
-          <span className="l">Begeleider toegewezen</span>
-          <span className="v">{metBegeleider} <small>/ {inBlok.length}</small></span>
-          <span className="meter"><i style={{ width: `${inBlok.length ? (metBegeleider / inBlok.length) * 100 : 0}%` }} /></span>
         </Link>
         <Link href="/beheer/stageplaatsen" className="bh-kpi">
           <span className="l">Stageplaatsen die meewerken</span>
@@ -154,13 +148,6 @@ export default async function Overzicht() {
                 <span className="c">{inBlok.length - metPlaats}</span>
               </Link>
             )}
-            {inBlok.length - metBegeleider > 0 && blok && (
-              <Link href="/beheer/leerlingen?filter=zonder-begeleider" className="bh-rij">
-                <span className="sev in" />
-                <span className="t">Nog geen begeleider toegewezen<small>{blok.naam}</small></span>
-                <span className="c">{inBlok.length - metBegeleider}</span>
-              </Link>
-            )}
             {vragen.map((v) => (
               <Link href="/beheer/vragen" className="bh-rij" key={v.id}>
                 <span className="sev bad" />
@@ -171,7 +158,7 @@ export default async function Overzicht() {
                 <span className="pijl">→</span>
               </Link>
             ))}
-            {leerlingen.length > 0 && inBlok.length === metPlaats && inBlok.length === metBegeleider && vragen.length === 0 && nakijken.totaal === 0 && nakijken.afwezig === 0 && nakijken.losInhaal === 0 && (
+            {leerlingen.length > 0 && inBlok.length === metPlaats && vragen.length === 0 && nakijken.totaal === 0 && nakijken.afwezig === 0 && nakijken.losInhaal === 0 && (
               <p className="bh-leeg">Niets dringends. Alles is in orde.</p>
             )}
           </div>

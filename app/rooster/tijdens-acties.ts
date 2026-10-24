@@ -62,8 +62,7 @@ export async function afwezigheidMelden(
     p_auto: berekend === gemist, p_reden: x.reden, p_opm: tekst(x.opm), p_naam: tekst(x.naam, 200),
   }), "Afwezigheid gemeld. De stagebegeleiding is verwittigd.");
   if (res?.ok && ctx.wie !== "school") {
-    const { data: beg } = await sb.rpc("dossier_begeleider", sleutel(k));
-    await afwezigheidMailen(ctx, { ...x, soort, gemist_min: gemist, naam: tekst(x.naam, 200) }, ctx.wie, (beg as { naam: string; email: string } | null) ?? null).catch(() => null);
+    await afwezigheidMailen(ctx, { ...x, soort, gemist_min: gemist, naam: tekst(x.naam, 200) }, ctx.wie).catch(() => null);
   }
   return res;
 }

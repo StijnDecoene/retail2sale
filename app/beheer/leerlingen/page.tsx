@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Formulier from "@/components/beheer/Formulier";
 import { leerlingToevoegen } from "../acties";
-import { serverClient, type Begeleider } from "@/lib/supabase/server";
+import { serverClient } from "@/lib/supabase/server";
 import {
   KLASSEN,
   LEERLING_STATUS,
@@ -24,18 +24,16 @@ export default async function Leerlingen({ searchParams }: { searchParams: Promi
   const vandaag = vandaagIso();
   const sb = await serverClient();
 
-  const [lR, bR, pR, gR] = await Promise.all([
+  const [lR, bR, pR] = await Promise.all([
     sb.from("leerlingen").select("*").eq("schooljaar", sj).order("klas").order("naam").order("voornaam"),
     sb.from("blokken").select("*").eq("schooljaar", sj).order("start_datum"),
     sb.from("stageplaatsen").select("id, naam, gemeente"),
-    sb.from("begeleiders").select("id, naam, kleur"),
   ]);
   const alle = (lR.data ?? []) as Leerling[];
   const blokken = (bR.data ?? []) as Blok[];
   const blok =
     blokken.find((b) => b.start_datum <= vandaag && vandaag <= b.eind_datum) ?? blokken.find((b) => b.start_datum > vandaag) ?? blokken.at(-1);
   const plaatsen = new Map(((pR.data ?? []) as { id: string; naam: string; gemeente: string | null }[]).map((p) => [p.id, p]));
-  const begeleiders = new Map(((gR.data ?? []) as Pick<Begeleider, "id" | "naam" | "kleur">[]).map((g) => [g.id, g]));
 
   let dossiers = new Map<string, Dossier>();
   if (blok) {
@@ -49,7 +47,6 @@ export default async function Leerlingen({ searchParams }: { searchParams: Promi
     if (zoek && !`${l.voornaam} ${l.naam} ${l.email ?? ""} ${l.smartschool_gebruikersnaam ?? ""}`.toLowerCase().includes(zoek)) return false;
     const d = dossiers.get(l.id);
     if (filter === "zonder-plaats") return l.status === "actief" && doetMee(blok, l.klas) && !d?.stageplaats_id;
-    if (filter === "zonder-begeleider") return l.status === "actief" && doetMee(blok, l.klas) && !d?.begeleider_id;
     if (filter === "geen-stage") return !doetMee(blok, l.klas);
     if (filter === "niet-actief") return l.status !== "actief";
     return true;
@@ -80,7 +77,6 @@ export default async function Leerlingen({ searchParams }: { searchParams: Promi
         <select name="filter" defaultValue={filter} aria-label="Filter">
           <option value="">Iedereen</option>
           <option value="zonder-plaats">Nog geen stageplaats</option>
-          <option value="zonder-begeleider">Nog geen begeleider</option>
           <option value="geen-stage">Geen stage in dit blok</option>
           <option value="niet-actief">Niet actief</option>
         </select>
@@ -106,7 +102,6 @@ export default async function Leerlingen({ searchParams }: { searchParams: Promi
                 <th>Klas</th>
                 <th>Status</th>
                 <th>Stageplaats</th>
-                <th>Begeleider</th>
                 <th>Contact</th>
               </tr>
             </thead>
@@ -114,7 +109,6 @@ export default async function Leerlingen({ searchParams }: { searchParams: Promi
               {lijst.map((l) => {
                 const d = dossiers.get(l.id);
                 const p = d?.stageplaats_id ? plaatsen.get(d.stageplaats_id) : null;
-                const g = d?.begeleider_id ? begeleiders.get(d.begeleider_id) : null;
                 const st = LEERLING_STATUS[l.status];
                 return (
                   <tr key={l.id}>
@@ -122,7 +116,6 @@ export default async function Leerlingen({ searchParams }: { searchParams: Promi
                     <td>{l.klas}</td>
                     <td><span className={`pill ${st.toon}`}>{st.label}</span></td>
                     <td>{p ? <>{p.naam}{p.gemeente ? <small className="sm"> · {p.gemeente}</small> : null}</> : !doetMee(blok, l.klas) ? <span className="pill mut">geen stage in dit blok</span> : <span className="sm">–</span>}</td>
-                    <td>{g ? <span className="beg" style={{ background: g.kleur ?? "#1D5BAA" }}>{g.naam}</span> : <span className="sm">–</span>}</td>
                     <td className="sm">{l.email ?? l.gsm ?? ""}</td>
                   </tr>
                 );

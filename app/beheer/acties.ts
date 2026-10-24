@@ -100,7 +100,6 @@ export async function dossierBewaren(_: Resultaat, fd: FormData): Promise<Result
     leerling_id: String(fd.get("leerling_id")),
     blok_id: String(fd.get("blok_id")),
     stageplaats_id: s(fd, "stageplaats_id"),
-    begeleider_id: s(fd, "begeleider_id"),
     mentor_naam: s(fd, "mentor_naam"),
     mentor_telefoon: tel(fd, "mentor_telefoon"),
     mentor_email: s(fd, "mentor_email")?.toLowerCase() ?? null,
