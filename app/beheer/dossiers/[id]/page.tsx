@@ -13,6 +13,7 @@ import ContractKaart from "@/components/contract/ContractKaart";
 import RoosterKaart from "@/components/rooster/RoosterKaart";
 import TijdensKaart from "@/components/rooster/TijdensKaart";
 import EvaluatieKaart from "@/components/evaluatie/EvaluatieKaart";
+import AfrondingKaart from "@/components/afronding/AfrondingKaart";
 import { bezettingsChecker } from "@/lib/stageplaats-bezetting";
 import { datumKort, tijdstip, volledigeNaam, zoekPlaats, type Blok, type Dossier, type Leerling, type Stageplaats } from "@/lib/beheer";
 import { stapStatus, type AanvraagRij, type Beoordeling, type Profiel, type StapStatus, type Top3Rij } from "@/lib/portaal";
@@ -236,6 +237,7 @@ export default async function DossierPagina({ params }: { params: Promise<{ id: 
       {(ba?.status === "goedgekeurd" || d.stageplaats_id) && <RoosterKaart sb={sb} dossierId={id} leerlingId={l.id} blokId={blok.id} site={site} />}
       {(ba?.status === "goedgekeurd" || d.stageplaats_id) && ik && <TijdensKaart sb={sb} dossierId={id} ikNaam={ik.naam} site={site} />}
       {(ba?.status === "goedgekeurd" || d.stageplaats_id) && <EvaluatieKaart sb={sb} dossierId={id} />}
+      {(ba?.status === "goedgekeurd" || d.stageplaats_id) && <AfrondingKaart sb={sb} dossierId={id} />}
     </>
   );
 }

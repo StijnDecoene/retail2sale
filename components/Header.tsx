@@ -2,7 +2,7 @@ import Link from "next/link";
 import Logos from "./Logos";
 import VraagKnop from "./VraagKnop";
 
-type Props = { actief?: "home" | "documenten" | "andere" };
+type Props = { actief?: "home" | "documenten" | "briefing" | "andere" };
 
 export default function Header({ actief = "home" }: Props) {
   const pre = actief === "home" ? "" : "/";
@@ -13,6 +13,9 @@ export default function Header({ actief = "home" }: Props) {
         <nav className="menu" aria-label="Hoofdmenu">
           <a href={`${pre}#opleiding`}>Opleiding</a>
           <a href={`${pre}#stage`}>Zo verloopt de stage</a>
+          <Link href="/handleiding" aria-current={actief === "briefing" ? "page" : undefined}>
+            Briefing
+          </Link>
           <Link href="/documenten" aria-current={actief === "documenten" ? "page" : undefined}>
             Documenten
           </Link>

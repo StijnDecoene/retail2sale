@@ -1,4 +1,4 @@
-// Evaluaties: de formulieren (mentor, stagebegeleider, zelfevaluatie sales en onthaal), punten en status.
+// Evaluaties: de formulieren (mentor, stagebegeleider, zelfevaluatie sales en onthaal, stageverslag, feedback), punten en status.
 // Inhoud overgenomen uit de documenten van de stagebegeleiding (oktober 2026).
 
 export type Niveau = "O" | "V" | "G" | "ZG" | "NVT";
@@ -14,7 +14,7 @@ export type Vraag =
   | { t: "keuze"; id: string; label: string; opties: string[] }
   | { t: "datum"; id: string; label: string };
 export type Deel = { titel: string; uitleg?: string; vragen: Vraag[] };
-export type Soort = "mentor" | "school" | "zelf";
+export type Soort = "mentor" | "school" | "zelf" | "verslag" | "feedback";
 export type Formulier = { soort: Soort; titel: string; voor: string; intro: string; schaal?: string[]; delen: Deel[] };
 
 const r = (id: string, label: string, O: string, V: string, G: string, ZG: string): Vraag => ({ t: "rubric", id, label, niveaus: { O, V, G, ZG }, nvt: true });
@@ -202,9 +202,62 @@ export const ZELF_ONTHAAL: Formulier = {
   ],
 };
 
+// ---------------------------------------------------------------------------
+// Afronding: stageverslag van de stagiair en feedback van de stagegever
+// ---------------------------------------------------------------------------
+export const VERSLAG: Formulier = {
+  soort: "verslag",
+  titel: "Stageverslag",
+  voor: "Stagiair",
+  intro: "In je stageverslag stel je je stageplaats voor en beschrijf je wat je gedaan en geleerd hebt. Schrijf in volzinnen en wees concreet: geef voorbeelden. Je kan tussendoor bewaren. Na indienen kan je niets meer wijzigen.",
+  delen: [
+    { titel: "Mijn stageplaats", vragen: [
+      { t: "tekst", id: "v1zaak", label: "Stel de zaak voor: wat doet of verkoopt ze, voor welke klanten, en hoe groot is het team?", lang: true },
+      { t: "tekst", id: "v1org", label: "Hoe is de werking georganiseerd? Wie doet wat, en wie was jouw aanspreekpunt?", lang: true },
+    ] },
+    { titel: "Mijn taken", vragen: [
+      { t: "tekst", id: "v2taken", label: "Welke taken deed je het vaakst? Beschrijf hoe je ze aanpakte.", lang: true },
+      { t: "tekst", id: "v2nieuw", label: "Welke taak deed je voor het eerst, en hoe verliep dat?", lang: true },
+    ] },
+    { titel: "Een situatie uit de praktijk", uitleg: "Beschrijf één concrete situatie met een klant, bezoeker of collega.", vragen: [
+      { t: "tekst", id: "v3sit", label: "Wat was de situatie?", lang: true },
+      { t: "tekst", id: "v3deed", label: "Wat deed je, en waarom?", lang: true },
+      { t: "tekst", id: "v3res", label: "Wat was het resultaat, en wat zou je de volgende keer anders doen?", lang: true },
+    ] },
+    { titel: "Wat neem ik mee?", vragen: [
+      { t: "tekst", id: "v4geleerd", label: "Wat zijn de drie belangrijkste dingen die je geleerd hebt?", lang: true },
+      { t: "tekst", id: "v4school", label: "Wat uit de lessen op school kon je toepassen? Wat miste je nog?", lang: true },
+      { t: "tekst", id: "v4toekomst", label: "Wat betekent deze stage voor je verdere studie of job?", lang: true },
+    ] },
+  ],
+};
+
+export const FEEDBACK: Formulier = {
+  soort: "feedback",
+  titel: "Feedback over de samenwerking",
+  voor: "Stagegever",
+  intro: "Hoe verliep de samenwerking met de school? Uw feedback helpt ons om leerlingen beter voor te bereiden en de stage vlotter te organiseren. Dit duurt een tweetal minuten. De stagiair ziet uw antwoorden niet.",
+  delen: [
+    { titel: "Samenwerking", vragen: [
+      { t: "schaal", id: "f1voorb", label: "Hoe goed was de stagiair voorbereid op de stage?", max: 5 },
+      { t: "schaal", id: "f1info", label: "Hoe duidelijk was de informatie van de school (afspraken, verwachtingen)?", max: 5 },
+      { t: "schaal", id: "f1contact", label: "Hoe vlot verliep het contact met de stagebegeleiding?", max: 5 },
+      { t: "schaal", id: "f1platform", label: "Hoe eenvoudig was het werken met het stageplatform (contract, rooster, evaluatie)?", max: 5 },
+    ] },
+    { titel: "Volgende keer", vragen: [
+      { t: "keuze", id: "f2opnieuw", label: "Wil u volgend schooljaar opnieuw een stagiair ontvangen?", opties: ["Ja", "Misschien", "Nee"] },
+      { t: "keuze", id: "f2periode", label: "Welke periode past u het best?", opties: ["Blokstage 1 (najaar)", "Blokstage 2 (voorjaar)", "Beide", "Maakt niet uit"] },
+      { t: "tekst", id: "f2beter", label: "Wat kunnen we beter doen?", lang: true, optioneel: true },
+      { t: "tekst", id: "f2opm", label: "Andere opmerkingen", lang: true, optioneel: true },
+    ] },
+  ],
+};
+
 export function formulier(soort: Soort, stage: "sales" | "onthaal" | "" | null | undefined): Formulier {
   if (soort === "mentor") return MENTOR;
   if (soort === "school") return SCHOOL;
+  if (soort === "verslag") return VERSLAG;
+  if (soort === "feedback") return FEEDBACK;
   return stage === "onthaal" ? ZELF_ONTHAAL : ZELF_SALES;
 }
 

@@ -8,5 +8,6 @@ export const SOORTEN: Record<string, { een: string; meer: string }> = {
   top3: { een: "top 3", meer: "top 3's" },
   aanvraag: { een: "aanvraag", meer: "aanvragen" },
   evaluatie: { een: "evaluatie", meer: "evaluaties" },
+  afronding: { een: "verslag of feedback", meer: "verslagen en feedback" },
 };
 export const soortTekst = (soort: string, n: number) => `${n} ${n === 1 ? SOORTEN[soort]?.een ?? soort : SOORTEN[soort]?.meer ?? soort}`;

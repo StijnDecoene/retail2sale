@@ -44,7 +44,7 @@ export default function EvaluatieForm({
       <div className="bh-card"><div className="bd">
         <p>{f.intro}</p>
         {f.schaal && <ul className="ev-schaal">{f.schaal.map((x) => <li key={x}><b>{x.split(":")[0]}</b>:{x.split(":").slice(1).join(":")}</li>)}</ul>}
-        {ingediend && <p className="bh-melding ok">{schoolDossier ? "Deze evaluatie is afgewerkt. Je kan ze nog aanpassen." : "Je hebt deze evaluatie ingediend. Bedankt!"}</p>}
+        {ingediend && <p className="bh-melding ok">{schoolDossier ? "Deze evaluatie is afgewerkt. Je kan ze nog aanpassen." : "Ingediend. Bedankt!"}</p>}
       </div></div>
 
       {f.delen.map((d, i) => (

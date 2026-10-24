@@ -68,7 +68,7 @@ export function uitnodiging(d: ContractData, rol: Rol, url: string, site: string
     onderwerp: x.onderwerp,
     html: mailHtml(site, {
       eyebrow: `${d.blok.naam} · stagecontract`, titel: "Stagecontract ondertekenen", aanspreking: x.aan, alineas: x.alineas, knop: { tekst: "Contract openen", url },
-      na: [`Uitleg stap voor stap: ${site}/handleiding/${rol === "stagegever" ? "stagegever" : "stagiair"}`],
+      na: [`Uitleg stap voor stap: ${site}/handleiding/${rol === "stagegever" ? "stagegever" : rol === "ouder" ? "ouder" : "stagiair"}`, ...(rol === "stagegever" ? [`Voor de mentor op de werkvloer: ${site}/handleiding/mentor`] : [])],
     }),
   };
 }
