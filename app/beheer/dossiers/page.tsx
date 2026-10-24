@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { serverClient, type Begeleider } from "@/lib/supabase/server";
+import { serverClient } from "@/lib/supabase/server";
 import { doetMee, schooljaarVan, vandaagIso, volledigeNaam, type Blok, type Dossier, type Leerling } from "@/lib/beheer";
 import { schoolActie, stapStatus, type AanvraagRij, type Beoordeling, type ContractStand, type StapStatus, type Top3Rij } from "@/lib/portaal";
 import { ROL_LABEL, nodigeRollen, type Rol } from "@/lib/contract";
@@ -17,17 +17,15 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
   const vandaag = vandaagIso();
   const sb = await serverClient();
 
-  const [lR, bR, pR, gR] = await Promise.all([
+  const [lR, bR, pR] = await Promise.all([
     sb.from("leerlingen").select("*").eq("schooljaar", sj).eq("status", "actief").order("klas").order("naam").order("voornaam"),
     sb.from("blokken").select("*").eq("schooljaar", sj).order("start_datum"),
     sb.from("stageplaatsen").select("id, naam, gemeente"),
-    sb.from("begeleiders").select("id, naam, kleur"),
   ]);
   const blokken = (bR.data ?? []) as Blok[];
   const blok = blokken.find((b) => b.id === blokId) ?? blokken.find((b) => b.eind_datum >= vandaag) ?? blokken.at(-1);
   const leerlingen = ((lR.data ?? []) as Leerling[]).filter((l) => doetMee(blok, l.klas));
   const plaatsen = new Map(((pR.data ?? []) as { id: string; naam: string; gemeente: string | null }[]).map((p) => [p.id, p]));
-  const begeleiders = new Map(((gR.data ?? []) as Pick<Begeleider, "id" | "naam" | "kleur">[]).map((g) => [g.id, g]));
 
   let dossiers: Dossier[] = [];
   let top3: Top3Rij[] = [], aanvragen: AanvraagRij[] = [], beoordelingen: Beoordeling[] = [];
@@ -82,7 +80,7 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
       rooster: d && roosters.has(d.id) ? roosterStand(roosters.get(d.id)!) : null,
     });
     const rooster = d ? roosters.get(d.id) : undefined;
-    // Contract in woorden voor de begeleider.
+    // Contract in woorden.
     const c = d ? contracten.get(d.id) : undefined;
     let contract: { toon: string; label: string; titel?: string } | null = null;
     if (st.contract.code === "geregeld") contract = { toon: "ok", label: "Al geregeld" };
@@ -181,12 +179,11 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
         ) : (
           <table className="bh-tabel">
             <thead>
-              <tr><th>Leerling</th><th>Klas</th><th>Top 3</th><th>Aanvraag</th><th>Contract</th><th>Werkrooster</th><th>Afwezig</th><th>Stageplaats</th><th>Begeleider</th><th></th></tr>
+              <tr><th>Leerling</th><th>Klas</th><th>Top 3</th><th>Aanvraag</th><th>Contract</th><th>Werkrooster</th><th>Afwezig</th><th>Stageplaats</th><th></th></tr>
             </thead>
             <tbody>
               {lijst.map(({ l, d, st, actie, contract, rooster, ts }) => {
                 const p = d?.stageplaats_id ? plaatsen.get(d.stageplaats_id) : null;
-                const g = d?.begeleider_id ? begeleiders.get(d.begeleider_id) : null;
                 const open = d ? `/beheer/dossiers/${d.id}` : `/beheer/leerlingen/${l.id}`;
                 return (
                   <tr key={l.id}>
@@ -198,7 +195,6 @@ export default async function Dossiers({ searchParams }: { searchParams: Promise
                     <td>{st.rooster.state === "locked" || st.rooster.code === "klaarzetten" ? <span className="sm">–</span> : <span className={`pill ${TOON[st.rooster.state]}`} title={rooster ? `${uren(rooster.totaal_min)} gepland` : undefined}>{st.rooster.label}</span>}</td>
                     <td>{!ts ? <span className="sm">–</span> : ts.teBeoordelen.length ? <span className="pill in">{ts.teBeoordelen.length} te beoordelen</span> : ts.rest ? <span className={`pill ${ts.verstreken ? "bad" : "warn"}`} title={`${uren(ts.ingehaald)} ingehaald, ${uren(ts.gepland)} gepland`}>{ts.verstreken ? "Termijn verstreken" : `nog ${uren(ts.rest)} in te halen`}</span> : <span className="pill ok">{ts.nodig ? "Ingehaald" : "Niets in te halen"}</span>}</td>
                     <td>{p ? <>{p.naam}{p.gemeente ? <small className="sm"> · {p.gemeente}</small> : null}</> : <span className="sm">–</span>}</td>
-                    <td>{g ? <span className="beg" style={{ background: g.kleur ?? "#1D5BAA" }}>{g.naam}</span> : <span className="sm">–</span>}</td>
                     <td>{actie && d ? <Link prefetch={false} className="bh-btn sm pri" href={open}>Nakijken</Link> : null}</td>
                   </tr>
                 );

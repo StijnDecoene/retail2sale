@@ -122,7 +122,7 @@ function BevestigingPdf({ b }: { b: BevestigingData }) {
           <View style={s.vak}><Text style={s.vakL}>Stagiair</Text><Text style={s.vakW}>{`${naamLeerling(b)} · ${b.leerling.klas}`}</Text></View>
           <View style={s.vak}><Text style={s.vakL}>Stagebedrijf</Text><Text style={s.vakW}>{naamBedrijf(b)}</Text></View>
           <View style={s.vak}><Text style={s.vakL}>Stagementor</Text><Text style={s.vakW}>{m.naam || "–"}</Text></View>
-          <View style={s.vak}><Text style={s.vakL}>Stagebegeleiding</Text><Text style={s.vakW}>{b.begeleider?.naam ?? teamNamen(b)}</Text></View>
+          <View style={s.vak}><Text style={s.vakL}>Stagebegeleiding</Text><Text style={s.vakW}>{teamNamen(b)}</Text></View>
         </View>
 
         <Text style={[s.p, { color: C.ink }]}>{aanspreking(b)},</Text>

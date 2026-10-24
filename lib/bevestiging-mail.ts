@@ -62,7 +62,7 @@ export function bevestigingMail(b0: BevestigingData, site: string, voor: Voor = 
         ${rij("Soort stage", soortStage(b))}
         ${rij("Stagementor", [m.naam, m.functie].filter(Boolean).join(", "))}
         ${rij("Eerste stagedag", `${datumMid(b.blok.start_datum)}${b.aanvraag.werkvloer?.startuur ? ` om ${b.aanvraag.werkvloer.startuur}` : ""}`)}
-        ${rij("Begeleider school", b.begeleider?.naam)}
+        ${rij("Stagebegeleiding", b.team.map((g) => g.naam).join(" en "))}
       </table>
     </td></tr></table>
     <p style="margin:12px 0 0;font-size:13px;color:${grijs}">In bijlage: de bevestiging met alle gegevens en de stagekalender, de infobrochure en de handleiding (pdf).</p>
