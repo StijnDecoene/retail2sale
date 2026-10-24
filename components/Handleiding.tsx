@@ -25,7 +25,7 @@ export default function Handleiding({ inhoud: h }: { inhoud: HandleidingInhoud }
           <h1>{h.titel}</h1>
           <p className="lead">{h.intro}</p>
           <div className="hl-acties">
-            <a className="btn btn-blue" href={`/handleiding/${h.wie}/pdf`} download>Download als pdf</a>
+            <a className="btn btn-blue" href={`/handleiding/${h.wie}/pdf`} target="_blank" rel="noreferrer">Openen als pdf</a>
             <AfdrukKnop />
             <a className="btn btn-line" href="/handleiding">Briefing per rol</a>
           </div>

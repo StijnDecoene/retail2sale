@@ -1039,17 +1039,18 @@ button.bh-kpi { font: inherit; text-align: left; cursor: pointer; color: inherit
 .act-bewaar { position: sticky; bottom: 0; z-index: 5; }
 
 /* Documenten (risicoanalyse) */
-.doc { display: grid; gap: 12px; }
-.doc-lijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.doc-lijst li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #e3e7ee; border-radius: 10px; background: #fff; flex-wrap: wrap; }
-.doc-ic { width: 38px; height: 38px; border-radius: 8px; background: #eaf1fb; color: #1d5baa; font-size: 10px; font-weight: 800; display: grid; place-items: center; flex: none; }
-.doc-t { flex: 1; min-width: 200px; display: flex; flex-direction: column; }
-.doc-t a { font-weight: 600; color: #1d5baa; word-break: break-word; }
-.doc-t small { color: #5a6578; font-size: 12px; }
-.doc-weg { border: 0; background: transparent; font-size: 20px; line-height: 1; color: #a11a27; cursor: pointer; padding: 0 4px; }
-.doc-op { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; padding: 12px; border: 1px dashed #b9cde9; border-radius: 12px; background: #f8fbff; }
-.doc-op .f { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: #3e4a5c; }
-.doc-op .doc-bestand { flex: 1; min-width: 220px; }
-.doc-op input[type="file"] { font-size: 13px; }
-.doc-school { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 12px; border-radius: 10px; background: #fff8e8; border: 1px solid #f1d9a6; font-size: 14px; }
-.doc-school a { font-weight: 600; color: #1d5baa; }
+.dc { display: grid; gap: 12px; }
+.dc-lijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.dc-lijst li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #e3e7ee; border-radius: 10px; background: #fff; flex-wrap: wrap; }
+.dc-ic { width: 38px; height: 38px; border-radius: 8px; background: #eaf1fb; color: #1d5baa; font-size: 10px; font-weight: 800; display: grid; place-items: center; flex: none; }
+.dc-t { flex: 1; min-width: 200px; display: flex; flex-direction: column; }
+.dc-t a { font-weight: 600; color: #1d5baa; word-break: break-word; }
+.dc-t small { color: #5a6578; font-size: 12px; }
+.dc-weg { border: 0; background: transparent; font-size: 20px; line-height: 1; color: #a11a27; cursor: pointer; padding: 0 4px; }
+.dc-op { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; padding: 12px; border: 1px dashed #b9cde9; border-radius: 12px; background: #f8fbff; }
+.dc-op .f { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: #3e4a5c; }
+.dc-op .dc-bestand { flex: 1; min-width: 220px; }
+.dc-op input[type="file"] { font-size: 13px; }
+.dc-school { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 12px; border-radius: 10px; background: #fff8e8; border: 1px solid #f1d9a6; font-size: 14px; }
+.dc-school a { font-weight: 600; color: #1d5baa; }
+.doc-acties { display: flex; gap: 8px; flex-wrap: wrap; }
