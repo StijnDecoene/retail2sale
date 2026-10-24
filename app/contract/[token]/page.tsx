@@ -41,7 +41,7 @@ export default async function ContractPagina({ params }: { params: Promise<{ tok
               <div className="ct-kop-rechts">
                 <span className="ct-ik">Je opent dit contract als <b>{ROL_LABEL[d.rol].toLowerCase()}</b></span>
                 {d.rol === "stagegever" && <a className="bh-link" href={`/rooster/${token}`}>Werkrooster plannen</a>}
-                <a className="bh-link" href={`/handleiding/${d.rol === "stagegever" ? "stagegever" : "stagiair"}`} target="_blank" rel="noreferrer">Hulp nodig? Lees de handleiding</a>
+                <a className="bh-link" href={`/handleiding/${d.rol === "stagegever" ? "stagegever" : d.rol === "ouder" ? "ouder" : "stagiair"}`} target="_blank" rel="noreferrer">Hulp nodig? Lees de handleiding</a>
               </div>
             </header>
             <ContractFlow d={d} token={token} secties={contractTekst(d)} status={contractStatus(d)} />

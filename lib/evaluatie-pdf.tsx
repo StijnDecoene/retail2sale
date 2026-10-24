@@ -23,7 +23,7 @@ const s = StyleSheet.create({
   voet: { position: "absolute", bottom: 20, left: 40, right: 40, fontSize: 7.5, color: C.muted, flexDirection: "row", justifyContent: "space-between" },
 });
 const KLEUR: Record<string, string> = { Onvoldoende: C.red, Voldoende: "#8a5300", Goed: C.ok, "Zeer goed": C.ok };
-const TITEL: Record<Soort, string> = { mentor: "Evaluatie door de stagementor", school: "Evaluatie stagebezoek door de stagebegeleiding", zelf: "Zelfevaluatie" };
+const TITEL: Record<Soort, string> = { mentor: "Evaluatie door de stagementor", school: "Evaluatie stagebezoek door de stagebegeleiding", zelf: "Zelfevaluatie", verslag: "Stageverslag", feedback: "Feedback van de stagegever" };
 
 function Blok({ c, soort }: { c: EvalContext; soort: Soort }) {
   const e = c.evaluaties.find((x) => x.soort === soort && x.status === "ingediend");

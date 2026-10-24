@@ -11,6 +11,7 @@ const MODULES = [
   { href: "/beheer/afwezigheden", label: "Afwezigheden", ic: "M4 5h16v15H4zM4 9h16M8 3v4M16 3v4M9 13l6 4M15 13l-6 4" },
   { href: "/beheer/bezoeken", label: "Stagebezoeken", ic: "M12 21s-6-5.3-6-10a6 6 0 1 1 12 0c0 4.7-6 10-6 10zM12 13a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" },
   { href: "/beheer/evaluaties", label: "Evaluaties", ic: "M5 3h14v18H5zM9 8h6M9 12h6M9 16h3" },
+  { href: "/beheer/afronding", label: "Afronding", ic: "M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8-4.3-4.1 5.9-.9z" },
   { href: "/beheer/stageplaatsen", label: "Stageplaatsen", ic: "M4 3h12v18H4zM16 9h4v12h-4M8 7h1M11 7h1M8 11h1M11 11h1M8 15h1M11 15h1" },
   { href: "/beheer/vragen", label: "Vragen", ic: "M3 5h18v14H3zM3 7l9 6 9-6" },
   { href: "/beheer/instellingen", label: "Instellingen", ic: "M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M16 6a2 2 0 1 0 4 0 2 2 0 0 0-4 0M8 12a2 2 0 1 0 4 0 2 2 0 0 0-4 0M16 18a2 2 0 1 0 4 0 2 2 0 0 0-4 0" },

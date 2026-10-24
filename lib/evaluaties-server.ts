@@ -1,6 +1,7 @@
 import "server-only";
 import type { serverClient } from "@/lib/supabase/server";
 import type { Sleutel } from "@/lib/werkrooster-server";
+import type { AttestGegevens } from "@/lib/afronding-server";
 import { PUNTEN_STANDAARD, type EvaluatieRij, type Puntenschema, type Resultaat } from "@/lib/evaluaties";
 
 type Sb = Awaited<ReturnType<typeof serverClient>>;
@@ -20,6 +21,9 @@ export type EvalContext = {
   opmerking: string | null;
   resultaat?: Resultaat | null;
   punten?: Puntenschema;
+  /** enkel via de databankfunctie */
+  afgerond?: boolean;
+  afronding?: { afgerond_op: string; uren_min: number; attest_code: string; attest: AttestGegevens } | null;
 };
 
 /** Voor de stagegeverlink en het portaal (via de databankfunctie: enkel wat die partij mag zien). */

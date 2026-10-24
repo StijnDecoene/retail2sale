@@ -11,6 +11,9 @@ import { vandaagIso } from "@/lib/beheer";
 import { laadEvaluatie } from "@/lib/evaluaties-server";
 import { formulier } from "@/lib/evaluaties";
 import EvaluatieForm from "@/components/evaluatie/EvaluatieForm";
+import NuTeDoen from "@/components/stagegever/NuTeDoen";
+import { laadOverzicht } from "@/lib/stagegever-server";
+import { taken } from "@/lib/stagegever";
 
 export const metadata: Metadata = { title: "Werkrooster", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -19,12 +22,16 @@ export default async function RoosterPagina({ params, searchParams }: { params: 
   const { token } = await params;
   const { tab } = await searchParams;
   const sb = await serverClient();
-  const [ctx, t] = await Promise.all([laadRooster(sb, { token }), laadTijdens(sb, { token })]);
+  const [ctx, t, ov] = await Promise.all([laadRooster(sb, { token }), laadTijdens(sb, { token }), laadOverzicht(sb, token)]);
   const vandaag = vandaagIso();
   const st = ctx && t ? stand(t, ctx.blok, vandaag) : null;
   const afw = tab === "afwezig";
-  const ev = tab === "evaluatie" && ctx ? await laadEvaluatie(sb, { token }) : null;
-  const titel = ev ? "Evaluatie" : afw ? "Afwezigheden en inhaalstage" : "Werkrooster";
+  const af = tab === "afronding";
+  const ev = (tab === "evaluatie" || af) && ctx ? await laadEvaluatie(sb, { token }) : null;
+  const titel = af ? "Afronding" : ev ? "Evaluatie" : afw ? "Afwezigheden en inhaalstage" : "Werkrooster";
+  const ik = ov?.stagiairs.find((x) => x.token === token);
+  const todo = ik ? taken(ik, vandaag) : [];
+  const fb = ev?.evaluaties.find((e) => e.soort === "feedback");
   return (
     <div className="pt">
       <header className="pt-balk">
@@ -34,7 +41,7 @@ export default async function RoosterPagina({ params, searchParams }: { params: 
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/img/logo-retail2sale.png" alt="Retail2Sale" />
         </Link>
-        <b className="pt-merk">{ev ? "Evaluatie" : afw ? "Afwezigheden" : "Werkrooster"}</b>
+        <b className="pt-merk">{af ? "Afronding" : ev ? "Evaluatie" : afw ? "Afwezigheden" : "Werkrooster"}</b>
       </header>
       <main className="pt-main">
         {!ctx ? (
@@ -55,16 +62,43 @@ export default async function RoosterPagina({ params, searchParams }: { params: 
               <div className="ct-kop-rechts">
                 <span className="ct-ik">Je opent dit rooster als <b>stagegever</b></span>
                 <a className="bh-link" href={`/contract/${token}`}>Naar het stagecontract</a>
+                {ov && ov.stagiairs.length > 1 && <a className="bh-link" href={`/stagegever/${token}`}>Al uw stagiairs ({ov.stagiairs.length})</a>}
+                <a className="bh-link" href="/handleiding/stagegever">Handleiding</a>
               </div>
             </header>
+            <NuTeDoen taken={todo.filter((x) => !x.href.endsWith(af ? "?tab=afronding" : ev ? "?tab=evaluatie" : afw ? "?tab=afwezig" : `/rooster/${token}`))} />
             <nav className="bh-seg pt-tabs" aria-label="Onderdeel">
-              <Link href={`/rooster/${token}`} className={afw || ev ? undefined : "on"}>Werkrooster</Link>
+              <Link href={`/rooster/${token}`} className={afw || ev || af ? undefined : "on"}>Werkrooster</Link>
               <Link href={`/rooster/${token}?tab=afwezig`} className={afw ? "on" : undefined}>
                 Afwezigheden en inhaalstage{st && (st.open > 0 || st.teBevestigen.length > 0 || st.nietGekoppeld.length > 0) ? " •" : ""}
               </Link>
-              <Link href={`/rooster/${token}?tab=evaluatie`} className={ev ? "on" : undefined}>Evaluatie</Link>
+              <Link href={`/rooster/${token}?tab=evaluatie`} className={ev && !af ? "on" : undefined}>Evaluatie</Link>
+              <Link href={`/rooster/${token}?tab=afronding`} className={af ? "on" : undefined}>Afronding</Link>
             </nav>
-            {ev ? (
+            {af && ev ? (
+              <>
+                {ev.afgerond ? (
+                  <div className="pt-feedback ok">
+                    <b>De stage is afgerond</b>
+                    <p>Bedankt voor de begeleiding van {ctx.leerling.voornaam}! {ctx.leerling.voornaam} kreeg een stageattest. U kreeg een bedankmail met een kopie.</p>
+                  </div>
+                ) : (
+                  <p className="pt-intro">
+                    Na de stage rondt de stagebegeleiding de stage af: {ctx.leerling.voornaam} krijgt dan een stageattest en u een bedankmail. Wil u ons intussen laten weten hoe de samenwerking verliep? Dat duurt een tweetal minuten.
+                  </p>
+                )}
+                <h3 className="pt-sub">Feedback over de samenwerking</h3>
+                <EvaluatieForm
+                  key={fb?.gewijzigd_op ?? "nieuw"}
+                  f={formulier("feedback", ev.stage)}
+                  start={fb?.antwoorden ?? {}}
+                  ingediend={fb?.status === "ingediend"}
+                  naamStart={fb?.naam ?? ctx.stagegever.naam ?? ""}
+                  naamVraag="Uw naam"
+                  sleutel={{ token }}
+                />
+              </>
+            ) : ev ? (
               <>
                 <p className="pt-intro">
                   Op het einde van de stage beoordeelt u {ctx.leerling.voornaam}. U kan tussendoor bewaren en later verder invullen. {ctx.leerling.voornaam} ziet uw evaluatie pas wanneer de stagebegeleiding ze openstelt; dan krijgt u ze ook per mail.

@@ -61,17 +61,19 @@ const GROEPEN: Groep[] = [
     titel: "Evaluatie",
     sub: "Opent automatisch tegen het einde van de stage.",
     docs: [
-      { soort: "form", titel: "Evaluatie stagementor", wie: "Stagegever", tekst: "Attitudes en werkgerelateerde competenties van de stagiair.", status: "Nog niet beschikbaar" },
-      { soort: "form", titel: "Zelfevaluatie en reflectie", wie: "Stagiair", tekst: "Competenties onthaal, organisatie en sales.", status: "Nog niet beschikbaar" },
-      { soort: "form", titel: "Stagebezoek leraar", wie: "Leraren", tekst: "In te vullen bij een stagebezoek of verkoopgesprek.", status: "Nog niet beschikbaar" },
+      { soort: "form", titel: "Evaluatie stagementor", wie: "Stagegever", tekst: "Attitudes en werkgerelateerde competenties van de stagiair, via de persoonlijke link.", status: PORTAAL },
+      { soort: "form", titel: "Zelfevaluatie", wie: "Stagiair", tekst: "Voor onthaal en organisatie of voor sales, in Mijn stage.", status: PORTAAL },
+      { soort: "form", titel: "Bezoekformulier stagebegeleider", wie: "Leraren", tekst: "In te vullen bij een stagebezoek, vanuit het beheer of de bezoekroute.", status: PORTAAL },
     ],
   },
   {
     n: "07",
     titel: "Afronding",
-    sub: "Het stageverslag sluit de stage af.",
+    sub: "Stageverslag, feedback en stageattest sluiten de stage af.",
     docs: [
-      { soort: "file", titel: "Hoe maak ik een stageverslag?", wie: "Stagiair", tekst: "Stappenplan voor het Portfolio op Smartschool.", status: "Binnenkort" },
+      { soort: "form", titel: "Stageverslag", wie: "Stagiair", tekst: "Je stageplaats, je taken, een situatie uit de praktijk en wat je meeneemt, in Mijn stage.", status: PORTAAL },
+      { soort: "form", titel: "Feedback over de samenwerking", wie: "Stagegever", tekst: "Twee minuten: hoe verliep de stage en wil u opnieuw een stagiair ontvangen?", status: PORTAAL },
+      { soort: "file", titel: "Stageattest", wie: "Stagiair", tekst: "Met stageplaats, periode en gepresteerde uren; na de afronding in Mijn stage en per mail.", status: PORTAAL },
     ],
   },
   {
@@ -81,8 +83,10 @@ const GROEPEN: Groep[] = [
     docs: [
       { soort: "file", titel: "Infobrochure stage 2026-2027", wie: "Iedereen", tekst: "De aanpak van de stage in Spes Nostra Heule.", href: "/docs/infobrochure-stage-2026-2027.pdf" },
       { soort: "file", titel: "Kalender 2026-2027", wie: "Iedereen", tekst: "Alle data voor stage, blokstage en verlofdagen.", status: "Binnenkort" },
-      { soort: "file", titel: "Handleiding voor stagegevers", wie: "Stagegever", tekst: "Bevestiging, digitaal contract, werkrooster, stagebezoek en evaluatie, stap voor stap.", href: "/handleiding/stagegever" },
-      { soort: "file", titel: "Handleiding voor stagiairs", wie: "Stagiair", tekst: "Top 3, aanvraag, contract en werkrooster, stap voor stap.", href: "/handleiding/stagiair" },
+      { soort: "file", titel: "Handleiding voor stagegevers", wie: "Stagegever", tekst: "Bevestiging, digitaal contract, werkrooster, afwezigheden, evaluatie en afronding, stap voor stap.", href: "/handleiding/stagegever" },
+      { soort: "file", titel: "Briefing voor de stagementor", wie: "Stagegever", tekst: "De eerste dag, begeleiding, stagebezoek en evaluatie: wat we van de mentor verwachten.", href: "/handleiding/mentor" },
+      { soort: "file", titel: "Handleiding voor stagiairs", wie: "Stagiair", tekst: "Top 3, aanvraag, contract, werkrooster, evaluatie en afronding, stap voor stap.", href: "/handleiding/stagiair" },
+      { soort: "file", titel: "Info voor ouders", wie: "Stagiair", tekst: "Voor de ouders: wat de stage inhoudt, wanneer u meetekent en wat te doen bij ziekte.", href: "/handleiding/ouder" },
     ],
   },
 ];

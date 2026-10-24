@@ -959,3 +959,52 @@ a.pt-stap:hover { border-color: var(--line-strong); color: var(--ink); }
 button.bh-kpi { font: inherit; text-align: left; cursor: pointer; color: inherit; }
 .ev-mailvink { display: inline-flex !important; flex-direction: row !important; align-items: center; gap: 8px; font-size: 14px; align-self: end; }
 .ev-mailvink input { width: 16px !important; height: 16px !important; min-height: 0 !important; padding: 0 !important; margin: 0; flex: none; }
+
+/* Afronding */
+.af-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.af-checks li { display: flex; align-items: baseline; gap: 10px; padding: 7px 10px; border-radius: 8px; font-size: 14px; flex-wrap: wrap; }
+.af-checks li small { color: var(--muted, #5a6578); }
+.af-checks li .bh-link { margin-left: auto; font-size: 13px; }
+.af-checks li.nok { background: #fdf0f1; }
+.af-checks li.let { background: #f7f8fa; }
+.af-ic { width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 12px; font-weight: 800; flex: none; align-self: center; background: #e5f3ec; color: #1e7a4f; }
+.af-checks li.nok .af-ic { background: #c21f2e; color: #fff; }
+.af-checks li.let .af-ic { background: #e3e7ee; color: #5a6578; }
+.af-knoppen { align-items: center; flex-wrap: wrap; }
+.af-tekort { color: #c21f2e; font-weight: 700; }
+
+/* Stagegever: nu te doen en overzicht */
+.sg-todo { background: #fff8e8; border: 1px solid #f1d9a6; border-radius: 12px; padding: 12px 14px; margin: 0 0 16px; }
+.sg-todo.compact { background: transparent; border: 0; padding: 0; margin: 4px 0 10px; }
+.sg-todo-kop { display: block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #8a5300; margin-bottom: 6px; }
+.sg-todo ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.sg-todo a { display: flex; gap: 10px; align-items: center; padding: 9px 12px; border-radius: 10px; background: #fff; border: 1px solid #e3e7ee; text-decoration: none; color: inherit; }
+.sg-todo a:hover { border-color: #1d5baa; }
+.sg-todo li.dringend a { border-color: #e2a33a; box-shadow: inset 3px 0 0 #e2a33a; }
+.sg-todo a b { display: block; font-size: 15px; color: #1d5baa; }
+.sg-todo a small { color: #5a6578; font-size: 13px; }
+.sg-pijl { font-weight: 800; color: #1d5baa; }
+.sg-leeg { color: #1e7a4f; font-weight: 600; margin: 4px 0 10px; font-size: 14px; }
+.sg-lijst { display: grid; gap: 14px; }
+.sg-kaart { background: #fff; border: 1px solid #e3e7ee; border-radius: 14px; padding: 16px 18px; }
+.sg-kaart.af { opacity: .8; }
+.sg-kop { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.sg-kop h2 { margin: 0; font-size: 19px; }
+.sg-kop h2 small { font-weight: 500; color: #5a6578; font-size: 14px; }
+.sg-kop .sub { margin: 2px 0 0; color: #5a6578; font-size: 14px; }
+.sg-links { display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px solid #eef1f5; padding-top: 10px; }
+.sg-links a { font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 8px; background: #f4f6f9; text-decoration: none; color: #0e1a2b; }
+.sg-links a:hover { background: #eaf1fb; color: #1d5baa; }
+
+/* Briefing per rol */
+.hl-rollen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 8px 0 48px; }
+.hl-rol { display: flex; flex-direction: column; gap: 8px; padding: 22px; border: 1px solid #e3e7ee; border-radius: 16px; background: #fff; text-decoration: none; color: inherit; transition: border-color .15s, transform .15s; }
+.hl-rol:hover { border-color: #1d5baa; transform: translateY(-2px); }
+.hl-rol b { font-size: 20px; color: #0e1a2b; }
+.hl-rol span { color: #3e4a5c; line-height: 1.5; }
+.hl-rol small { margin-top: auto; color: #1d5baa; font-weight: 600; }
+.hl-rol-ic { width: 44px; height: 44px; border-radius: 12px; background: #eaf1fb; color: #1d5baa; display: grid; place-items: center; }
+.hl-andere { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 24px 0; font-size: 14px; }
+.hl-andere span { color: #5a6578; }
+.hl-andere a { padding: 6px 12px; border-radius: 999px; background: #eaf1fb; color: #1d5baa; font-weight: 600; text-decoration: none; }
+@media (max-width: 640px) { .hl-rollen { grid-template-columns: 1fr; } }

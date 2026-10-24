@@ -6,12 +6,12 @@ import { formulier, type Soort } from "@/lib/evaluaties";
 import EvaluatieForm from "@/components/evaluatie/EvaluatieForm";
 
 export const metadata = { title: "Evaluatie" };
-const TITEL: Record<Soort, string> = { school: "Bezoekformulier stagebegeleider", mentor: "Evaluatie stagementor", zelf: "Zelfevaluatie" };
+const TITEL: Record<Soort, string> = { school: "Bezoekformulier stagebegeleider", mentor: "Evaluatie stagementor", zelf: "Zelfevaluatie", verslag: "Stageverslag", feedback: "Feedback van de stagegever" };
 
 export default async function EvaluatiePagina({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ soort?: string; terug?: string }> }) {
   const { id } = await params;
   const { soort: s, terug } = await searchParams;
-  const soort = (["school", "mentor", "zelf"].includes(s ?? "") ? s : "school") as Soort;
+  const soort = (["school", "mentor", "zelf", "verslag", "feedback"].includes(s ?? "") ? s : "school") as Soort;
   const sb = await serverClient();
   const ctx = await laadEvaluatieSchool(sb, id);
   if (!ctx) notFound();
@@ -28,16 +28,16 @@ export default async function EvaluatiePagina({ params, searchParams }: { params
           <p className="sub">{ctx.leerling.voornaam} {ctx.leerling.naam} ({ctx.leerling.klas}) · {ctx.winkel ?? "geen stageplaats"} · {ctx.blok.naam}{ctx.stage ? ` · ${ctx.stage === "sales" ? "sales" : "onthaal"}` : ""}</p>
         </div>
         <nav className="bh-seg" aria-label="Evaluatie">
-          {(["school", "mentor", "zelf"] as Soort[]).map((x) => (
+          {(["school", "mentor", "zelf", "verslag", "feedback"] as Soort[]).map((x) => (
             <Link key={x} href={`/beheer/dossiers/${id}/evaluatie?soort=${x}`} className={x === soort ? "on" : undefined}>
-              {x === "school" ? "Bezoek" : x === "mentor" ? "Mentor" : "Zelfevaluatie"}{ctx.evaluaties.find((y) => y.soort === x)?.status === "ingediend" ? " ✓" : ""}
+              {({ school: "Bezoek", mentor: "Mentor", zelf: "Zelfevaluatie", verslag: "Verslag", feedback: "Feedback" } as const)[x]}{ctx.evaluaties.find((y) => y.soort === x)?.status === "ingediend" ? " ✓" : ""}
             </Link>
           ))}
         </nav>
       </header>
       {soort !== "school" && (
         <p className="bh-melding">
-          {soort === "mentor" ? "De mentor vult dit in via zijn persoonlijke link (tabblad Evaluatie). Hier kan je een evaluatie op papier overnemen of iets verbeteren." : "De stagiair vult dit in het portaal in. Hier kan je meekijken of iets verbeteren."}
+          {soort === "mentor" ? "De mentor vult dit in via zijn persoonlijke link (tabblad Evaluatie). Hier kan je een evaluatie op papier overnemen of iets verbeteren." : soort === "feedback" ? "De stagegever vult dit in via zijn persoonlijke link (tabblad Afronding). De stagiair ziet dit niet." : "De stagiair vult dit in het portaal in. Hier kan je meekijken of iets verbeteren."}
         </p>
       )}
       <EvaluatieForm

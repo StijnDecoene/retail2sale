@@ -4,7 +4,7 @@ import { formulier, puntVoorstel, score, type Soort } from "@/lib/evaluaties";
 import type { serverClient } from "@/lib/supabase/server";
 import EvaluatieBeslissing from "./EvaluatieBeslissing";
 
-const NAAM: Record<Soort, string> = { mentor: "Stagementor", school: "Stagebezoek", zelf: "Zelfevaluatie" };
+const NAAM: Record<Soort, string> = { mentor: "Stagementor", school: "Stagebezoek", zelf: "Zelfevaluatie", verslag: "Stageverslag", feedback: "Feedback stagegever" };
 
 /** Evaluaties in het dossier: stand van de drie formulieren, puntvoorstel, eindpunt en openstellen. */
 export default async function EvaluatieKaart({ sb, dossierId }: { sb: Awaited<ReturnType<typeof serverClient>>; dossierId: string }) {
@@ -35,7 +35,7 @@ export default async function EvaluatieKaart({ sb, dossierId }: { sb: Awaited<Re
             );
           })}
         </div>
-        <EvaluatieBeslissing dossierId={dossierId} voorstel={voorstel} eindpunt={ctx.eindpunt} opmerking={ctx.opmerking ?? ""} op={p.op} vrijgegeven={ctx.vrijgegeven} heeftEvaluatie={ctx.evaluaties.some((e) => e.status === "ingediend" && e.soort !== "zelf")} />
+        <EvaluatieBeslissing dossierId={dossierId} voorstel={voorstel} eindpunt={ctx.eindpunt} opmerking={ctx.opmerking ?? ""} op={p.op} vrijgegeven={ctx.vrijgegeven} heeftEvaluatie={ctx.evaluaties.some((e) => e.status === "ingediend" && (e.soort === "mentor" || e.soort === "school"))} />
         <div className="bh-acties">
           <a className="bh-btn" href={`/beheer/dossiers/${dossierId}/evaluatie/pdf`} target="_blank" rel="noreferrer">Pdf (mentor en bezoek)</a>
           <a className="bh-btn" href={`/beheer/dossiers/${dossierId}/evaluatie/pdf?zelf=1`} target="_blank" rel="noreferrer">Pdf met zelfevaluatie</a>

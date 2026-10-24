@@ -1,7 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AfdrukKnop from "@/components/AfdrukKnop";
-import { CONTACT, stukken, type HandleidingInhoud } from "@/lib/handleidingen";
+import { CONTACT, HANDLEIDINGEN, WIE, stukken, type HandleidingInhoud } from "@/lib/handleidingen";
 
 /** Tekst met **vet** en [tekst](link). */
 function Rijk({ s }: { s: string }) {
@@ -18,16 +18,16 @@ function Rijk({ s }: { s: string }) {
 export default function Handleiding({ inhoud: h }: { inhoud: HandleidingInhoud }) {
   return (
     <>
-      <Header actief="documenten" />
+      <Header actief="briefing" />
       <main className="wrap hl">
         <header className="hl-kop">
-          <span className="eyebrow"><span className="streep" />Handleiding · {h.voor}</span>
+          <span className="eyebrow"><span className="streep" />Briefing · {h.voor}</span>
           <h1>{h.titel}</h1>
           <p className="lead">{h.intro}</p>
           <div className="hl-acties">
             <a className="btn btn-blue" href={`/handleiding/${h.wie}/pdf`} download>Download als pdf</a>
             <AfdrukKnop />
-            <a className="btn btn-line" href={h.andere.href}>{h.andere.tekst}</a>
+            <a className="btn btn-line" href="/handleiding">Briefing per rol</a>
           </div>
         </header>
 
@@ -60,6 +60,11 @@ export default function Handleiding({ inhoud: h }: { inhoud: HandleidingInhoud }
             </details>
           ))}
         </section>
+
+        <nav className="hl-andere" aria-label="Andere briefings">
+          <span>Ook lezen:</span>
+          {WIE.filter((w) => w !== h.wie).map((w) => <a key={w} href={`/handleiding/${w}`}>{HANDLEIDINGEN[w].voor}</a>)}
+        </nav>
 
         <section className="hl-contact">
           <h2>Vragen? Neem contact op</h2>

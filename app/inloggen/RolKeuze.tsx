@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useTransition, type FormEvent } from "react";
+import { stagegeverLinkAanvragen, type LinkResultaat } from "./acties";
 import Link from "next/link";
 import { IcMail, IcSmartschool } from "@/components/Icons";
 import { browserClient } from "@/lib/supabase/browser";
@@ -10,7 +11,7 @@ export type Rol = "stagegever" | "stagiair" | "school";
 
 const LABELS: Record<Rol, string> = { stagegever: "Stagegever", stagiair: "Stagiair", school: "School" };
 
-// Stagiair en stagegever volgen later in fase 1 (Smartschool, persoonlijke link per mail).
+// Stagiair volgt later (Smartschool). Stagegever: persoonlijke link per mail, opnieuw aan te vragen met het mailadres.
 const PORTAAL_OPEN = false;
 
 export default function RolKeuze({ start, fout }: { start: Rol; fout?: string }) {
@@ -37,7 +38,7 @@ export default function RolKeuze({ start, fout }: { start: Rol; fout?: string })
         </p>
       )}
 
-      {rol === "school" ? <SchoolLogin /> : <NogNietOpen rol={rol} />}
+      {rol === "school" ? <SchoolLogin /> : rol === "stagegever" ? <StagegeverLogin /> : <NogNietOpen />}
     </div>
   );
 }
@@ -123,7 +124,43 @@ function SchoolLogin() {
   );
 }
 
-function NogNietOpen({ rol }: { rol: Exclude<Rol, "school"> }) {
+function StagegeverLogin() {
+  const [email, setEmail] = useState("");
+  const [msg, setMsg] = useState<LinkResultaat | null>(null);
+  const [bezig, run] = useTransition();
+  function verstuur(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setMsg(null);
+    run(async () => setMsg(await stagegeverLinkAanvragen(email)));
+  }
+  return (
+    <>
+      <p className="info">
+        <b>Geen wachtwoord nodig.</b> U werkt met een persoonlijke link die u per mail krijgt van retail2sale@snh.be. Link kwijt? Vul het
+        mailadres in waarop u de mail over de stage kreeg: u krijgt meteen een overzicht van al uw stagiairs.
+      </p>
+      {msg?.ok ? (
+        <p className="info" role="status"><b>Kijk in uw mailbox.</b> {msg.ok}</p>
+      ) : (
+        <form onSubmit={verstuur} style={{ display: "flex", flexDirection: "column", gap: 16 }} noValidate>
+          <div className="veld">
+            <label htmlFor="sg-mail">Uw e-mailadres</label>
+            <input id="sg-mail" type="email" placeholder="naam@bedrijf.be" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          </div>
+          <button type="submit" className="btn btn-blue" disabled={bezig || !email.includes("@")}>{bezig ? "Versturen…" : "Stuur mij mijn links"}</button>
+        </form>
+      )}
+      {msg?.fout && <p className="fout" role="alert">{msg.fout}</p>}
+      <p className="info">
+        <b>Eerste keer?</b> U krijgt een uitnodiging per mail zodra de stage van uw stagiair vastligt. Meer uitleg in de{" "}
+        <Link href="/handleiding/stagegever" style={{ fontWeight: 600 }}>handleiding voor stagegevers</Link>.
+      </p>
+    </>
+  );
+}
+
+function NogNietOpen() {
+  const rol = "stagiair" as Rol;
   return (
     <>
       {!PORTAAL_OPEN && (
@@ -148,21 +185,7 @@ function NogNietOpen({ rol }: { rol: Exclude<Rol, "school"> }) {
             lijst. Kom je er toch niet in, laat het dan weten aan de stagebegeleiding via Smartschool.
           </p>
         </>
-      ) : (
-        <>
-          <div className="veld">
-            <label htmlFor="mail">E-mailadres</label>
-            <input id="mail" type="email" placeholder="naam@bedrijf.be" autoComplete="email" disabled />
-          </div>
-          <button type="button" className="btn btn-blue" disabled>
-            Stuur mij een inloglink
-          </button>
-          <p className="info">
-            <b>Eerste keer?</b> Als stagegever krijgt u een uitnodiging per e-mail zodra de aanvraag voor uw stagiair binnen
-            is. Geen mail ontvangen? <Link href="/#contact" style={{ fontWeight: 600 }}>Laat het ons weten</Link>.
-          </p>
-        </>
-      )}
+      ) : null}
     </>
   );
 }
