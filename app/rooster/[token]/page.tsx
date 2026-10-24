@@ -4,13 +4,22 @@ import { serverClient } from "@/lib/supabase/server";
 import { laadRooster } from "@/lib/werkrooster-server";
 import { datumMidden } from "@/lib/contract";
 import RoosterEditor from "@/components/rooster/RoosterEditor";
+import TijdensStage from "@/components/rooster/TijdensStage";
+import { laadTijdens } from "@/lib/tijdens-server";
+import { stand } from "@/lib/tijdens";
+import { vandaagIso } from "@/lib/beheer";
 
 export const metadata: Metadata = { title: "Werkrooster", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
-export default async function RoosterPagina({ params }: { params: Promise<{ token: string }> }) {
+export default async function RoosterPagina({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ tab?: string }> }) {
   const { token } = await params;
-  const ctx = await laadRooster(await serverClient(), { token });
+  const { tab } = await searchParams;
+  const sb = await serverClient();
+  const [ctx, t] = await Promise.all([laadRooster(sb, { token }), laadTijdens(sb, { token })]);
+  const vandaag = vandaagIso();
+  const st = ctx && t ? stand(t, ctx.blok, vandaag) : null;
+  const afw = tab === "afwezig";
   return (
     <div className="pt">
       <header className="pt-balk">
@@ -20,7 +29,7 @@ export default async function RoosterPagina({ params }: { params: Promise<{ toke
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/img/logo-retail2sale.png" alt="Retail2Sale" />
         </Link>
-        <b className="pt-merk">Werkrooster</b>
+        <b className="pt-merk">{afw ? "Afwezigheden" : "Werkrooster"}</b>
       </header>
       <main className="pt-main">
         {!ctx ? (
@@ -33,7 +42,7 @@ export default async function RoosterPagina({ params }: { params: Promise<{ toke
             <header className="pt-kop">
               <div>
                 <span className="eyebrow"><span className="streep" />{ctx.blok.naam} · Onthaal, organisatie en sales</span>
-                <h1>Werkrooster</h1>
+                <h1>{afw ? "Afwezigheden en inhaalstage" : "Werkrooster"}</h1>
                 <p className="sub">
                   {ctx.leerling.voornaam} {ctx.leerling.naam} ({ctx.leerling.klas}) · {ctx.stagegever.winkel} · {datumMidden(ctx.blok.start_datum)} tot en met {datumMidden(ctx.blok.eind_datum)}
                 </p>
@@ -43,11 +52,28 @@ export default async function RoosterPagina({ params }: { params: Promise<{ toke
                 <a className="bh-link" href={`/contract/${token}`}>Naar het stagecontract</a>
               </div>
             </header>
-            <p className="pt-intro">
-              Plan samen met {ctx.leerling.voornaam} de stagedagen: in totaal <b>{ctx.blok.uren} uur</b>. Vink een dag aan en pas de uren aan. Met
-              {" "}<i>Overnemen in de volgende weken</i> kopieer je een week. Is alles in orde, bevestig en dien in: de stagebegeleiding keurt het rooster goed.
-            </p>
-            <RoosterEditor key={`${ctx.rooster?.status}-${ctx.rooster?.gewijzigd_op}`} ctx={ctx} sleutel={{ token }} pdfUrl={`/rooster/${token}/pdf`} />
+            <nav className="bh-seg pt-tabs" aria-label="Onderdeel">
+              <Link href={`/rooster/${token}`} className={afw ? undefined : "on"}>Werkrooster</Link>
+              <Link href={`/rooster/${token}?tab=afwezig`} className={afw ? "on" : undefined}>
+                Afwezigheden en inhaalstage{st && (st.open > 0 || st.teBevestigen.length > 0 || st.nietGekoppeld.length > 0) ? " •" : ""}
+              </Link>
+            </nav>
+            {afw && t ? (
+              <>
+                <p className="pt-intro">
+                  Meld hier een afwezigheid van {ctx.leerling.voornaam} en plan samen de inhaalstage. Na afloop bevestigt u dat de uren gepresteerd zijn: pas dan tellen ze als ingehaald.
+                </p>
+                <TijdensStage key={`${t.afwezigheden.length}-${t.inhaal.length}`} ctx={ctx} t={t} sleutel={{ token }} vandaag={vandaag} naamStart={ctx.stagegever.naam ?? ""} />
+              </>
+            ) : (
+              <>
+                <p className="pt-intro">
+                  Plan samen met {ctx.leerling.voornaam} de stagedagen: in totaal <b>{ctx.blok.uren} uur</b>. Vink een dag aan en pas de uren aan. Met
+                  {" "}<i>Overnemen in de volgende weken</i> kopieer je een week. Is alles in orde, bevestig en dien in: de stagebegeleiding keurt het rooster goed.
+                </p>
+                <RoosterEditor key={`${ctx.rooster?.status}-${ctx.rooster?.gewijzigd_op}`} ctx={ctx} sleutel={{ token }} pdfUrl={`/rooster/${token}/pdf`} />
+              </>
+            )}
           </>
         )}
       </main>

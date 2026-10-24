@@ -100,7 +100,7 @@ export const HANDLEIDINGEN: Record<Wie, HandleidingInhoud> = {
         titel: "Tijdens de stage",
         tekst: [
           "De mentor zorgt voor een goed onthaal, legt de werking en de taken uit en begeleidt de stagiair op de werkvloer. De stagebegeleider komt minstens één keer op bezoek, zonder dat vooraf te melden.",
-          "**Afwezig?** De stagiair verwittigt u vóór de start van de stage. Afgesproken uren die niet gepresteerd zijn, moeten worden ingehaald: op woensdagnamiddag, op zaterdag of in de vakantie, tot 14 dagen na de stage. Meld afwezigheden en inhaalmomenten aan de stagebegeleiding.",
+          "**Afwezig?** De stagiair verwittigt u vóór de start van de stage. Afgesproken uren die niet gepresteerd zijn, moeten worden ingehaald: op woensdagnamiddag, op zaterdag of in de vakantie, tot 14 dagen na de stage. Afwezigheden en inhaalstage beheert u via dezelfde persoonlijke link, tabblad **Afwezigheden en inhaalstage**: een afwezigheid melden (de gemiste uren komen uit het werkrooster), samen een inhaalmoment plannen en na afloop bevestigen dat de uren gepresteerd zijn. Pas na uw bevestiging tellen ze als ingehaald.",
         ],
       },
       {
@@ -200,8 +200,8 @@ export const HANDLEIDINGEN: Record<Wie, HandleidingInhoud> = {
         titel: "Tijdens de stage",
         tekst: ["Wees minstens 10 minuten voor de start aanwezig, draag verzorgde kledij en volg de afspraken van de zaak."],
         punten: [
-          "**Ziek of afwezig?** Verwittig vóór de start telefonisch en persoonlijk de winkel, beide stagebegeleiders en het secretariaat van de school. Bezorg daarna een doktersattest aan het secretariaat en een kopie aan de winkel.",
-          "Gemiste uren haal je in: op woensdagnamiddag, op zaterdag of in de vakantie, tot 14 dagen na de stage.",
+          "**Ziek of afwezig?** Verwittig vóór de start telefonisch en persoonlijk de winkel, beide stagebegeleiders en het secretariaat van de school. Bezorg daarna een doktersattest aan het secretariaat en een kopie aan de winkel. Meld de afwezigheid ook in Mijn stage, bij **Tijdens de stage**.",
+          "Gemiste uren haal je in: op woensdagnamiddag, op zaterdag of in de vakantie, tot 14 dagen na de stage. Plan het inhaalmoment samen met de stagegever in Mijn stage en koppel het aan de afwezigheid. De stagegever bevestigt na afloop. Een afwezigheid die de school als gewettigd aanduidt, moet je niet inhalen.",
           "Plan tijdens je stage-uren geen afspraken bij de dokter, rijles of uitstappen.",
         ],
       },

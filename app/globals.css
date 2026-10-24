@@ -347,7 +347,7 @@ p { margin: 0; }
 .bh-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .bh-link { font-weight: 600; font-size: 13px; text-decoration: none; }
 
-.bh-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.bh-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 10px; }
 .bh-kpi { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; text-decoration: none; color: var(--ink); display: flex; flex-direction: column; gap: 2px; box-shadow: 0 1px 2px rgba(14, 26, 43, 0.06); }
 .bh-kpi:hover { border-color: var(--blue); color: var(--ink); }
 .bh-kpi .l { font-size: 12px; color: var(--muted); font-weight: 600; }
@@ -741,3 +741,45 @@ a.pt-stap:hover { border-color: var(--line-strong); color: var(--ink); }
   .wr-totaal { top: 50px; }
   .wr-week .hd { gap: 4px 10px; }
 }
+
+/* Tijdens de stage: afwezigheden en inhaalstage */
+.pt-tijdens { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 12px 16px; background: #fff; border: 1px solid var(--line); border-radius: 12px; text-decoration: none; color: var(--ink); }
+.pt-tijdens b { font: 700 15px var(--f-display); }
+.pt-tijdens small { color: var(--muted); font-size: 13px; flex: 1; }
+.pt-tijdens.on { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
+.pt-tijdens:hover { color: var(--ink); border-color: var(--blue); }
+.pt-tabs { align-self: flex-start; }
+.ts { display: flex; flex-direction: column; gap: 14px; }
+.ts-tegels { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.ts-tegels > div { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; display: flex; flex-direction: column; }
+.ts-tegels small { color: var(--muted); font-size: 12.5px; font-weight: 600; }
+.ts-tegels b { font: 700 22px var(--f-display); }
+.ts-tegels b.ok { color: #17663f; }
+.ts-tegels .hot { border-color: #e7c27d; background: #fffaf0; }
+.ts-lijst { list-style: none; margin: 0; padding: 0; }
+.ts-lijst > li { padding: 10px 16px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; }
+.ts-lijst > li:first-child { border-top: 0; }
+.ts-lijst > li.ts-let { background: #fffaf0; }
+.ts-r1 { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; font-size: 14px; }
+.ts-r1 > span { color: var(--ink-2); }
+.ts-uren { margin-left: auto; font: 700 14px var(--f-display); white-space: nowrap; }
+.ts-r2 { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; font-size: 13px; color: var(--ink-2); }
+.ts-r2 .mut { color: var(--muted); }
+.ts-r3 { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.ts-wettig { height: 30px; border: 1px solid var(--line-strong); border-radius: 8px; font: inherit; font-size: 13px; padding: 0 6px; background: #fff; }
+.ts-twee { display: inline-flex; gap: 8px; align-items: center; }
+.ts-form { display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid var(--line); background: #fbfcfe; }
+.ts-form .f, .ts-bev .f { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.ts-form input, .ts-form select, .ts-bev input, .ts-bev select { height: 38px; border: 1px solid var(--line-strong); border-radius: 8px; padding: 0 8px; font: inherit; font-size: 14px; background: #fff; color: var(--ink); }
+.ts-rij { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; }
+.ts-urenkeuze { display: inline-flex; gap: 6px; }
+.ts-koppel { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px; }
+.ts-koppel legend { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 4px; }
+.ts-meld { padding-left: 0; }
+.ts-bev { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; padding: 8px 0 2px; }
+@media (max-width: 640px) {
+  .ts-tegels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ts-lijst > li { padding: 10px 12px; }
+}
+.ts-bev .pt-vink, .ts-koppel .pt-vink { flex-direction: row; align-items: center; gap: 8px; }
+.ts-bev .pt-vink input, .ts-koppel .pt-vink input { width: 18px; height: 18px; margin: 0; }
