@@ -56,7 +56,7 @@ export default async function BeheerLayout({ children }: { children: React.React
           <b>Stagebeheer</b>
           <span>Onthaal, organisatie en sales</span>
         </div>
-        <Zijbalk tellers={{ "/beheer/vragen": nieuweVragen ?? 0, "/beheer/leerlingen": leerlingen ?? 0, "/beheer/dossiers": nakijken.totaal }} />
+        <Zijbalk tellers={{ "/beheer/vragen": nieuweVragen ?? 0, "/beheer/leerlingen": leerlingen ?? 0, "/beheer/dossiers": nakijken.totaal, "/beheer/afwezigheden": nakijken.afwezig + nakijken.losInhaal }} />
         <div className="bh-wie">
           <span className="av" style={{ background: begeleider.kleur ?? "#1D5BAA" }} aria-hidden="true">
             {begeleider.naam.split(" ").map((d) => d[0]).join("").slice(0, 2)}

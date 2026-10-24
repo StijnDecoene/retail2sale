@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import Formulier, { ActieKnop } from "@/components/beheer/Formulier";
 import { dossierBewaren, leerlingBewaren, leerlingVerwijderen } from "../../acties";
 import { serverClient, type Begeleider } from "@/lib/supabase/server";
-import { KLASSEN, LEERLING_STATUS, datumKort, doetMee, volledigeNaam, type Blok, type Dossier, type Leerling } from "@/lib/beheer";
+import { KLASSEN, LEERLING_STATUS, datumKort, doetMee, vandaagIso, volledigeNaam, type Blok, type Dossier, type Leerling } from "@/lib/beheer";
+import { tijdensVoorDossiers } from "@/lib/tijdens-beheer";
+import { standTekst } from "@/lib/tijdens";
 
 export const metadata = { title: "Leerling" };
 
@@ -24,6 +26,12 @@ export default async function LeerlingFiche({ params }: { params: Promise<{ id: 
   const dossiers = new Map(((dR.data ?? []) as Dossier[]).map((d) => [d.blok_id, d]));
   const plaatsen = (pR.data ?? []) as { id: string; naam: string; gemeente: string | null; status: string }[];
   const begeleiders = (gR.data ?? []) as Pick<Begeleider, "id" | "naam" | "actief">[];
+  // Afwezigheden en inhaalstage per blokstage (korte samenvatting).
+  const tijdens = new Map(await Promise.all(blokken.filter((b) => dossiers.has(b.id)).map(async (b) => {
+    const d = dossiers.get(b.id)!;
+    const { per } = await tijdensVoorDossiers(sb, [d.id], b, vandaagIso());
+    return [b.id, per.get(d.id)] as const;
+  })));
   const klassen = KLASSEN.includes(leerling.klas) ? KLASSEN : [leerling.klas, ...KLASSEN];
 
   return (
@@ -74,9 +82,20 @@ export default async function LeerlingFiche({ params }: { params: Promise<{ id: 
                   <span className="sm">{datumKort(b.start_datum)} – {datumKort(b.eind_datum)}</span>
                 </div>
                 <div className="bd bh-acties">
-                  {d && <Link className="bh-btn sm" href={`/beheer/dossiers/${d.id}`}>Top 3 en aanvraag</Link>}
+                  {d && <Link className="bh-btn sm" href={`/beheer/dossiers/${d.id}`}>Stagedossier</Link>}
                   <Link className="bh-btn sm" href={`/portaal?leerling=${leerling.id}&blok=${b.id}`}>Bekijk als leerling</Link>
                 </div>
+                {tijdens.get(b.id) && (() => {
+                  const t = tijdens.get(b.id)!;
+                  return (
+                    <p className="bd sm">
+                      <b>Afwezigheden:</b> {t.per.size} gemeld · {standTekst(t)}
+                      {t.teBeoordelen.length ? <> · <span className="pill in">{t.teBeoordelen.length} te beoordelen</span></> : null}
+                      {t.verstreken ? <> · <span className="pill bad">termijn verstreken</span></> : null}
+                      {" "}<Link href={`/beheer/dossiers/${d!.id}`}>Bekijken</Link>
+                    </p>
+                  );
+                })()}
                 {!doetMee(b, leerling.klas) && (
                   <p className="bh-melding bd">Klas {leerling.klas} doet niet mee aan {b.naam} (zie Instellingen). Je kan hier toch gegevens invullen.</p>
                 )}

@@ -119,6 +119,34 @@ export default async function Overzicht() {
                 <span className="c">{nakijken.aanvraag}</span>
               </Link>
             )}
+            {nakijken.rooster > 0 && (
+              <Link href="/beheer/dossiers?filter=actie" className="bh-rij">
+                <span className="sev bad" />
+                <span className="t">Werkroosters na te kijken<small>goedkeuren of terugsturen, ook wijzigingen</small></span>
+                <span className="c">{nakijken.rooster}</span>
+              </Link>
+            )}
+            {nakijken.contract > 0 && (
+              <Link href="/beheer/dossiers?filter=contract" className="bh-rij">
+                <span className="sev bad" />
+                <span className="t">Contracten wachten op de school<small>alle andere partijen hebben getekend</small></span>
+                <span className="c">{nakijken.contract}</span>
+              </Link>
+            )}
+            {nakijken.afwezig > 0 && (
+              <Link href="/beheer/afwezigheden" className="bh-rij">
+                <span className="sev bad" />
+                <span className="t">Afwezigheden te beoordelen<small>gewettigd of niet gewettigd</small></span>
+                <span className="c">{nakijken.afwezig}</span>
+              </Link>
+            )}
+            {nakijken.losInhaal > 0 && (
+              <Link href="/beheer/afwezigheden?toon=los" className="bh-rij">
+                <span className="sev warn" />
+                <span className="t">Inhaalstage niet gekoppeld<small>de uren tellen pas mee na koppeling aan een afwezigheid</small></span>
+                <span className="c">{nakijken.losInhaal}</span>
+              </Link>
+            )}
             {inBlok.length - metPlaats > 0 && blok && (
               <Link href="/beheer/leerlingen?filter=zonder-plaats" className="bh-rij">
                 <span className="sev warn" />
@@ -143,7 +171,7 @@ export default async function Overzicht() {
                 <span className="pijl">→</span>
               </Link>
             ))}
-            {leerlingen.length > 0 && inBlok.length === metPlaats && inBlok.length === metBegeleider && vragen.length === 0 && nakijken.totaal === 0 && (
+            {leerlingen.length > 0 && inBlok.length === metPlaats && inBlok.length === metBegeleider && vragen.length === 0 && nakijken.totaal === 0 && nakijken.afwezig === 0 && nakijken.losInhaal === 0 && (
               <p className="bh-leeg">Niets dringends. Alles is in orde.</p>
             )}
           </div>
