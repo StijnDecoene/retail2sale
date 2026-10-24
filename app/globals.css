@@ -1054,3 +1054,50 @@ button.bh-kpi { font: inherit; text-align: left; cursor: pointer; color: inherit
 .dc-school { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 12px; border-radius: 10px; background: #fff8e8; border: 1px solid #f1d9a6; font-size: 14px; }
 .dc-school a { font-weight: 600; color: #1d5baa; }
 .doc-acties { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Opleiding: leerweg, op school, op stage, na de opleiding */
+.opl-meer { display: flex; flex-direction: column; gap: 40px; padding-bottom: 112px; }
+.opl-kop { display: flex; flex-direction: column; gap: 10px; }
+.leerweg { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 16px; counter-reset: lw; }
+.leerweg li { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 24px; border-radius: 16px; background: #fff; border: 1px solid var(--line); }
+.leerweg li.stage { background: var(--ink); color: #fff; border-color: var(--ink); }
+.lw-nr { font: 600 14px var(--f-display); color: var(--red); }
+.lw-jaar { font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.leerweg li.stage .lw-jaar { color: #a9c8f0; }
+.leerweg b { font: 600 20px var(--f-display); line-height: 1.2; }
+.lw-tekst { font-size: 15px; line-height: 1.55; color: var(--ink-2); }
+.leerweg li.stage .lw-tekst { color: #c9d3e2; }
+.lw-tag { margin-top: auto; align-self: flex-start; font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: var(--red); color: #fff; }
+.opl-twee { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 24px; }
+.opl-blok { display: flex; flex-direction: column; gap: 14px; padding: 32px; border-radius: 20px; background: #fff; border: 1px solid var(--line); }
+.opl-blok h3 { font: 600 26px var(--f-display); line-height: 1.2; margin: 0; }
+.opl-blok p { margin: 0; font-size: 16px; line-height: 1.65; color: var(--ink-2); }
+.vakken { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 2px; }
+.vakken li { display: flex; gap: 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.vakken li:last-child { border-bottom: 0; }
+.v-uren { flex: none; width: 52px; height: 52px; border-radius: 12px; display: grid; place-items: center; font: 700 20px var(--f-display); background: var(--blue-soft); color: var(--blue); }
+.vakken li:first-child .v-uren { background: var(--blue); color: #fff; }
+.vakken b { display: block; font-size: 16px; }
+.vakken small { font-size: 14px; color: var(--muted); }
+.stage-soorten { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px; }
+.stage-soort { display: flex; flex-direction: column; gap: 8px; padding: 18px; border-radius: 14px; }
+.stage-soort.sales { background: #fdf0f1; }
+.stage-soort.onthaal { background: var(--blue-soft); }
+.stage-soort b { font-size: 16px; }
+.stage-soort span { font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+.opl-links { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.opl-links a { font-weight: 600; color: var(--blue); text-decoration: none; }
+.jobs { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+.jobs li { font-size: 14px; font-weight: 600; padding: 8px 12px; border-radius: 999px; background: #f4f6f9; border: 1px solid var(--line); }
+.opl-cta { background: var(--ink); border-color: var(--ink); color: #fff; }
+.opl-cta .eyebrow { color: #a9c8f0; }
+.opl-cta p { color: #c9d3e2; }
+.opl-cta .knoppen { display: flex; flex-wrap: wrap; gap: 10px; margin-top: auto; }
+.opl-cta .btn-line { background: transparent; color: #fff; border-color: rgba(255,255,255,.4); }
+@media (max-width: 560px) {
+  .pijlers { padding: 24px 20px; }
+  .pijler { grid-template-columns: 44px minmax(0, 1fr); column-gap: 14px; padding-right: 8px; }
+  .pijler .blok { width: 44px; height: 44px; }
+  .pijler .n { display: none; }
+  .opl-blok { padding: 22px; }
+}
