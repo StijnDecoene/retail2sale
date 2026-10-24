@@ -7,6 +7,7 @@ import { laadTijdens } from "@/lib/tijdens-server";
 import { gemistUitRooster, inhaalControle, inhaalTermijn, stand, REDENEN } from "@/lib/tijdens";
 import { geldendRooster, naarMin } from "@/lib/werkrooster";
 import { vandaagIso } from "@/lib/beheer";
+import { afwezigheidMailen } from "@/lib/werkrooster-mails";
 
 export type TijdensResultaat = { ok?: string; fout?: string; vraag?: string } | null;
 
@@ -55,11 +56,16 @@ export async function afwezigheidMelden(
   const berekend = gemistUitRooster(dag, soort, x.aan, x.ver);
   const gemist = Math.round(Number(x.gemist_min));
   if (!Number.isFinite(gemist) || gemist <= 0 || gemist > 16 * 60) return { fout: "Vul het aantal gemiste uren in." };
-  return antwoord(k, sb.rpc("afwezigheid_melden", {
+  const res = await antwoord(k, sb.rpc("afwezigheid_melden", {
     ...sleutel(k), p_datum: x.datum, p_soort: soort, p_aan: soort === "deel" ? tijd(x.aan) || null : null, p_ver: soort === "deel" ? tijd(x.ver) || null : null,
     p_gemist: gemist, p_gepland: dag ? { ...dag, min: berekend !== null && soort === "hele" ? berekend : gemistUitRooster(dag, "hele") } : null,
     p_auto: berekend === gemist, p_reden: x.reden, p_opm: tekst(x.opm), p_naam: tekst(x.naam, 200),
-  }), "Afwezigheid gemeld.");
+  }), "Afwezigheid gemeld. De stagebegeleiding is verwittigd.");
+  if (res?.ok && ctx.wie !== "school") {
+    const { data: beg } = await sb.rpc("dossier_begeleider", sleutel(k));
+    await afwezigheidMailen(ctx, { ...x, soort, gemist_min: gemist, naam: tekst(x.naam, 200) }, ctx.wie, (beg as { naam: string; email: string } | null) ?? null).catch(() => null);
+  }
+  return res;
 }
 
 export async function afwezigheidVerwijderen(k: Sleutel, id: string): Promise<TijdensResultaat> {

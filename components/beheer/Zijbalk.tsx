@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const MODULES = [
   { href: "/beheer", label: "Overzicht", ic: "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" },
+  { href: "/beheer/meldingen", label: "Meldingen", ic: "M6 16V11a6 6 0 1 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0" },
   { href: "/beheer/leerlingen", label: "Leerlingen", ic: "M9 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.9.7 3.1 2.5 3.5 5.2" },
   { href: "/beheer/dossiers", label: "Stagedossiers", ic: "M6 3h9l4 4v14H6zM14 3v5h5M9 13l2 2 4-4" },
   { href: "/beheer/afwezigheden", label: "Afwezigheden", ic: "M4 5h16v15H4zM4 9h16M8 3v4M16 3v4M9 13l6 4M15 13l-6 4" },
@@ -26,7 +27,7 @@ export default function Zijbalk({ tellers }: { tellers: Partial<Record<string, n
               <svg className="i" viewBox="0 0 24 24" aria-hidden="true"><path d={m.ic} /></svg>
               {m.label}
             </span>
-            {n ? <span className={`n${m.href === "/beheer/vragen" || m.href === "/beheer/dossiers" || m.href === "/beheer/afwezigheden" ? " alert" : ""}`}>{n}</span> : null}
+            {n ? <span className={`n${m.href !== "/beheer/leerlingen" ? " alert" : ""}`}>{n}</span> : null}
           </Link>
         );
       })}
