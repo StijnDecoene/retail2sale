@@ -181,8 +181,8 @@ function NogNietOpen() {
             Met je Microsoft-schoolaccount
           </button>
           <p className="info">
-            <b>Lukt het niet?</b> Alleen leerlingen van het 4de, 5de en 6de jaar Onthaal, organisatie en sales staan op de
-            lijst. Kom je er toch niet in, laat het dan weten aan de stagebegeleiding via Smartschool.
+            <b>Lukt het niet?</b> Alleen leerlingen van het 5de en 6de jaar Onthaal, organisatie en sales (en van het 4de jaar
+            Organisatie en logistiek, voor hun top 3) staan op de lijst. Kom je er toch niet in, laat het dan weten aan de stagebegeleiding via Smartschool.
           </p>
         </>
       ) : null}
