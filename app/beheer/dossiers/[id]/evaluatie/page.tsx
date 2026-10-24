@@ -11,7 +11,7 @@ const TITEL: Record<Soort, string> = { school: "Bezoekformulier stagebegeleider"
 export default async function EvaluatiePagina({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ soort?: string; terug?: string }> }) {
   const { id } = await params;
   const { soort: s, terug } = await searchParams;
-  const soort = (["school", "mentor", "zelf", "verslag", "feedback"].includes(s ?? "") ? s : "school") as Soort;
+  const soort = (["school", "mentor", "zelf", "feedback"].includes(s ?? "") ? s : "school") as Soort;
   const sb = await serverClient();
   const ctx = await laadEvaluatieSchool(sb, id);
   if (!ctx) notFound();
@@ -28,7 +28,7 @@ export default async function EvaluatiePagina({ params, searchParams }: { params
           <p className="sub">{ctx.leerling.voornaam} {ctx.leerling.naam} ({ctx.leerling.klas}) · {ctx.winkel ?? "geen stageplaats"} · {ctx.blok.naam}{ctx.stage ? ` · ${ctx.stage === "sales" ? "sales" : "onthaal"}` : ""}</p>
         </div>
         <nav className="bh-seg" aria-label="Evaluatie">
-          {(["school", "mentor", "zelf", "verslag", "feedback"] as Soort[]).map((x) => (
+          {(["school", "mentor", "zelf", "feedback"] as Soort[]).map((x) => (
             <Link key={x} href={`/beheer/dossiers/${id}/evaluatie?soort=${x}`} className={x === soort ? "on" : undefined}>
               {({ school: "Bezoek", mentor: "Mentor", zelf: "Zelfevaluatie", verslag: "Verslag", feedback: "Feedback" } as const)[x]}{ctx.evaluaties.find((y) => y.soort === x)?.status === "ingediend" ? " ✓" : ""}
             </Link>

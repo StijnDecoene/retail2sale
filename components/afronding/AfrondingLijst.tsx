@@ -7,7 +7,7 @@ import { stagesAfronden } from "@/app/beheer/afronding-acties";
 
 export type AfRij = {
   dossier_id: string; naam: string; klas: string; plaats: string;
-  uren: string; urenOk: boolean; rooster: boolean; afw: boolean; eval: boolean; verslag: boolean; feedback: boolean;
+  uren: string; urenOk: boolean; rooster: boolean; afw: boolean; eval: boolean; feedback: boolean;
   klaar: boolean; afgerond: string | null; code: string | null;
 };
 const V = (ok: boolean, nodig = false) => (ok ? <span className="pill ok">✓</span> : <span className={nodig ? "pill bad" : "sm"}>{nodig ? "!" : "–"}</span>);
@@ -21,14 +21,13 @@ export default function AfrondingLijst({ rijen }: { rijen: AfRij[] }) {
   const [bezig, run] = useTransition();
   const kan = (r: AfRij) => !r.afgerond && r.klaar;
   const lijst = rijen.filter((r) => (filter === "klaar" ? kan(r) : filter === "open" ? !r.afgerond && !r.klaar : filter === "af" ? !!r.afgerond : true));
-  const tel = { klaar: rijen.filter(kan).length, open: rijen.filter((r) => !r.afgerond && !r.klaar).length, af: rijen.filter((r) => r.afgerond).length, verslag: rijen.filter((r) => r.verslag).length, feedback: rijen.filter((r) => r.feedback).length };
+  const tel = { klaar: rijen.filter(kan).length, open: rijen.filter((r) => !r.afgerond && !r.klaar).length, af: rijen.filter((r) => r.afgerond).length, feedback: rijen.filter((r) => r.feedback).length };
   const wissel = (id: string) => setSel((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   return (
     <>
       <div className="bh-kpis">
         <button type="button" className={`bh-kpi${tel.klaar ? " hot" : ""}`} onClick={() => setFilter("klaar")}><span className="l">Klaar om af te ronden</span><span className="v">{tel.klaar}</span></button>
         <button type="button" className="bh-kpi" onClick={() => setFilter("open")}><span className="l">Nog niet klaar</span><span className="v">{tel.open}</span></button>
-        <button type="button" className="bh-kpi" onClick={() => setFilter("")}><span className="l">Stageverslag ingediend</span><span className="v">{tel.verslag}<small> / {rijen.length}</small></span></button>
         <button type="button" className="bh-kpi" onClick={() => setFilter("")}><span className="l">Feedback stagegever</span><span className="v">{tel.feedback}<small> / {rijen.length}</small></span></button>
         <button type="button" className="bh-kpi" onClick={() => setFilter("af")}><span className="l">Afgerond</span><span className="v">{tel.af}<small> / {rijen.length}</small></span></button>
       </div>
@@ -46,7 +45,7 @@ export default function AfrondingLijst({ rijen }: { rijen: AfRij[] }) {
       </div>
       <div className="bh-tw">
         <table className="bh-tabel">
-          <thead><tr><th></th><th>Leerling</th><th>Klas</th><th>Stageplaats</th><th>Rooster</th><th>Afwezig</th><th className="r">Uren</th><th>Evaluatie</th><th>Verslag</th><th>Feedback</th><th>Afgerond</th></tr></thead>
+          <thead><tr><th></th><th>Leerling</th><th>Klas</th><th>Stageplaats</th><th>Rooster</th><th>Afwezig</th><th className="r">Uren</th><th>Evaluatie</th><th>Feedback</th><th>Afgerond</th></tr></thead>
           <tbody>
             {lijst.map((r) => (
               <tr key={r.dossier_id}>
@@ -58,16 +57,15 @@ export default function AfrondingLijst({ rijen }: { rijen: AfRij[] }) {
                 <td>{V(r.afw, true)}</td>
                 <td className={`r${r.urenOk ? "" : " af-tekort"}`}>{r.uren}</td>
                 <td>{V(r.eval, true)}</td>
-                <td>{V(r.verslag)}</td>
                 <td>{V(r.feedback)}</td>
                 <td>{r.afgerond ? <a className="pill ok" href={`/beheer/dossiers/${r.dossier_id}/attest`} target="_blank" rel="noreferrer" title={r.code ?? undefined}>{r.afgerond} · attest</a> : r.klaar ? <span className="pill warn">klaar</span> : <span className="sm">nee</span>}</td>
               </tr>
             ))}
-            {!lijst.length && <tr><td colSpan={11} className="bh-leeg">Geen leerlingen in deze selectie.</td></tr>}
+            {!lijst.length && <tr><td colSpan={10} className="bh-leeg">Geen leerlingen in deze selectie.</td></tr>}
           </tbody>
         </table>
       </div>
-      <p className="sm">Rooster, afwezigheden en evaluatie moeten in orde zijn om af te ronden; verslag en feedback zijn een aandachtspunt. Een stage die niet helemaal in orde is, rond je af vanuit het dossier.</p>
+      <p className="sm">Rooster, afwezigheden en evaluatie moeten in orde zijn om af te ronden; de feedback van de stagegever is een aandachtspunt. Een stage die niet helemaal in orde is, rond je af vanuit het dossier.</p>
     </>
   );
 }

@@ -6,6 +6,7 @@ import { bezoeker, contractViaLink, tekstHash } from "@/lib/contract-server";
 import { adresFouten, adresSamen, effectief, gegevensFouten, type AdresDelen, type ContractGegevens, type Rol } from "@/lib/contract";
 import { mailFout, telFout, telMooi } from "@/lib/contactcheck";
 import { naGetekend } from "@/lib/contract-mails";
+import { MIN_ACTIVITEITEN, schoonLijst } from "@/lib/activiteiten";
 
 export type ContractResultaat = { ok?: string; fout?: string; velden?: Record<string, string> } | null;
 
@@ -13,7 +14,8 @@ const MELDING: Record<string, string> = {
   onbekend: "Deze link is niet (meer) geldig. Vraag een nieuwe link aan de stagebegeleiding.",
   geen_rechten: "Met deze link kan je dit niet doen.",
   vergrendeld: "Er is al getekend. Wijzigingen kan enkel de stagebegeleiding nog doen: mail naar retail2sale@snh.be.",
-  gegevens: "Vul eerst de verplichte gegevens aan (naam ondertekenaar, hoedanigheid en mentor).",
+  gegevens: "Vul eerst de verplichte gegevens aan (naam ondertekenaar, hoedanigheid, mentor en activiteitenlijst).",
+  ongeldig: "De activiteitenlijst kon niet bewaard worden. Probeer opnieuw.",
   volgorde: "De stagegever tekent eerst. Je krijgt bericht zodra jij kan tekenen.",
   al_getekend: "Dit is al ondertekend.",
   niet_nodig: "Bij een meerderjarige stagiair tekent er geen ouder.",
@@ -31,12 +33,14 @@ export async function contractBewaren(token: string, invoer: ContractGegevens): 
     winkel_tel: telMooi(tekst(invoer.winkel_tel, 40)), winkel_email: tekst(invoer.winkel_email, 200).toLowerCase(), kbo: tekst(invoer.kbo, 30),
     pc: tekst(invoer.pc, 40), rsz: tekst(invoer.rsz, 40), risico: invoer.risico === "heb" || invoer.risico === "stuur" ? invoer.risico : "",
     toestellen: tekst(invoer.toestellen, 1000), afspraken: tekst(invoer.afspraken, 1000),
+    activiteiten: schoonLijst(invoer.activiteiten),
   };
   const velden: Record<string, string> = {};
   const mt = telFout(g.mentor_tel), wt = telFout(g.winkel_tel), wm = mailFout(g.winkel_email);
   if (mt) velden.mentor_tel = mt;
   if (wt) velden.winkel_tel = wt;
   if (wm) velden.winkel_email = wm;
+  if ((g.activiteiten?.length ?? 0) < MIN_ACTIVITEITEN) velden.activiteiten = `Duid minstens ${MIN_ACTIVITEITEN} activiteiten aan.`;
   if (Object.keys(velden).length) return { fout: "Kijk de rode velden na.", velden };
   const sb = await serverClient();
   const { data, error } = await sb.rpc("contract_aanvullen", { p_token: token, p_gegevens: g });

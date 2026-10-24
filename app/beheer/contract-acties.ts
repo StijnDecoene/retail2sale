@@ -1,5 +1,6 @@
 "use server";
 
+import { MIN_ACTIVITEITEN, schoonLijst, type ActItem } from "@/lib/activiteiten";
 import { revalidatePath } from "next/cache";
 import { huidigeGebruiker, serverClient } from "@/lib/supabase/server";
 import { bezoeker, contractBeheer, contractKlaarzetten, nieuweLink, tekstHash } from "@/lib/contract-server";
@@ -92,6 +93,23 @@ export async function contractGegevensBewaren(_: Resultaat, fd: FormData): Promi
   await sb.from("contract_log").insert({ dossier_id: id, wie: ik.naam, wat: `gegevens gewijzigd (${gewijzigd.join(", ")})${na ? " na ondertekening" : ""}` });
   herlaad(id);
   return { ok: na ? "Bewaard. Er was al getekend: de wijziging staat in het logboek." : "Bewaard." };
+}
+
+/** Activiteitenlijst aanpassen (stagebegeleiding). */
+export async function contractActiviteitenBewaren(dossierId: string, items: ActItem[]): Promise<Resultaat> {
+  const ik = await begeleider();
+  if (!ik) return { fout: "Je hebt hiervoor geen rechten." };
+  const lijst = schoonLijst(items);
+  if (lijst.length < MIN_ACTIVITEITEN) return { fout: `Duid minstens ${MIN_ACTIVITEITEN} activiteiten aan.` };
+  const sb = await serverClient();
+  const { data: c } = await sb.from("contracten").select("gegevens").eq("dossier_id", dossierId).maybeSingle();
+  if (!c) return { fout: "Er is nog geen contract." };
+  const { error } = await sb.from("contracten").update({ gegevens: { ...(c.gegevens as object), activiteiten: lijst } }).eq("dossier_id", dossierId);
+  if (error) return { fout: "Bewaren lukte niet." };
+  const { data: getekend } = await sb.from("contract_partijen").select("rol").eq("dossier_id", dossierId).not("getekend_op", "is", null);
+  await sb.from("contract_log").insert({ dossier_id: dossierId, wie: ik.naam, wat: `activiteitenlijst aangepast (${lijst.length} activiteiten)${(getekend ?? []).length ? " na ondertekening" : ""}` });
+  herlaad(dossierId);
+  return { ok: "Activiteitenlijst bewaard." };
 }
 
 /** Tekenen als directeur (door de directeur zelf of een stagebegeleider in diens naam). Daarna gaat het contract naar alle partijen. */

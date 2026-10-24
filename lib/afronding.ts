@@ -67,7 +67,6 @@ export function controlelijst(o: {
     },
     { k: "mentor", label: "Evaluatie stagementor", ok: e("mentor"), detail: e("mentor") ? "" : "nog niet ingediend", nodig: false },
     { k: "eval", label: "Evaluatie opengesteld", ok: !!o.resultaat?.vrijgegeven_op, detail: o.resultaat?.vrijgegeven_op ? (o.resultaat.eindpunt !== null ? `eindpunt ${o.resultaat.eindpunt}` : "") : "nog niet opengesteld", nodig: true },
-    { k: "verslag", label: "Stageverslag", ok: e("verslag"), detail: e("verslag") ? "" : "nog niet ingediend", nodig: false },
     { k: "feedback", label: "Feedback stagegever", ok: e("feedback"), detail: e("feedback") ? "" : "nog niet ingevuld", nodig: false },
   ];
 }

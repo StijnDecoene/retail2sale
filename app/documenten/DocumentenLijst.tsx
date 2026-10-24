@@ -69,9 +69,8 @@ const GROEPEN: Groep[] = [
   {
     n: "07",
     titel: "Afronding",
-    sub: "Stageverslag, feedback en stageattest sluiten de stage af.",
+    sub: "Feedback en stageattest sluiten de stage af.",
     docs: [
-      { soort: "form", titel: "Stageverslag", wie: "Stagiair", tekst: "Je stageplaats, je taken, een situatie uit de praktijk en wat je meeneemt, in Mijn stage.", status: PORTAAL },
       { soort: "form", titel: "Feedback over de samenwerking", wie: "Stagegever", tekst: "Twee minuten: hoe verliep de stage en wil u opnieuw een stagiair ontvangen?", status: PORTAAL },
       { soort: "file", titel: "Stageattest", wie: "Stagiair", tekst: "Met stageplaats, periode en gepresteerde uren; na de afronding in Mijn stage en per mail.", status: PORTAAL },
     ],

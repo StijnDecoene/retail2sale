@@ -18,7 +18,7 @@ const ROLLEN: { id: Rol; label: string }[] = [
 const ONDERWERPEN: Record<Rol, string[]> = {
   stagegever: ["Een stageplaats aanbieden", "Aanvraag of stagecontract", "Werkrooster", "Afwezigheid of inhaalstage", "Evaluatie", "Inloggen op het portaal", "Andere vraag"],
   ouder: ["Algemene info over de stage", "Een stageplaats zoeken", "Afwezigheid van mijn kind", "Andere vraag"],
-  leerling: ["Een stageplaats zoeken", "Werkrooster of uren", "Afwezigheid of inhaalstage", "Stageverslag", "Inloggen op het portaal", "Andere vraag"],
+  leerling: ["Een stageplaats zoeken", "Werkrooster of uren", "Afwezigheid of inhaalstage", "Inloggen op het portaal", "Andere vraag"],
   andere: ["Info over de opleiding", "Samenwerking", "Andere vraag"],
 };
 

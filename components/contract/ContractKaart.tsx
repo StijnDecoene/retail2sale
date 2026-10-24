@@ -2,6 +2,7 @@ import Formulier, { ActieKnop } from "@/components/beheer/Formulier";
 import Ondertekening from "./Ondertekening";
 import Kopieer from "./Kopieer";
 import DirectieTekenen from "./DirectieTekenen";
+import ActiviteitenBeheer from "./ActiviteitenBeheer";
 import { contractGegevensBewaren, contractHandtekeningWissen, contractKlaarzettenActie, contractLeeftijdHerbepalen, contractLinkMailen } from "@/app/beheer/contract-acties";
 import { leeftijdOp } from "@/lib/portaal";
 import { contractBeheer } from "@/lib/contract-server";
@@ -158,6 +159,12 @@ export default async function ContractKaart({
               <label className="f full">Andere afspraken<textarea name="afspraken" defaultValue={g.afspraken} /></label>
             </div>
           </Formulier>
+        </details>
+
+        <details className="bh-toevoegen bh-ct-sub">
+          <summary>Activiteitenlijst ({g.activiteiten.length}{d.contract.gegevens.activiteiten?.length ? "" : ", voorstel"})</summary>
+          <ActiviteitenBeheer dossierId={dossierId} catalogus={d.catalogus ?? []} stage={d.aanvraag?.bedrijf?.soort} start={g.activiteiten}
+            bevestigd={!!d.contract.gegevens.activiteiten?.length} getekend={st.klaar > 0} />
         </details>
 
         {(d.log.length > 0 || beheerder) && (
